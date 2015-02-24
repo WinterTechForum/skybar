@@ -1,0 +1,12 @@
+
+Build:
+
+cd skybar
+mvn clean install
+cd ../skybar-demo
+mvn clean install
+
+Run skybar-demo:
+
+cd skybar
+java -javaagent:target/skybar-1.0-SNAPSHOT.jar -jar ../skybar-demo/target/skybar-demo-1.0-SNAPSHOT-jetty-console.war --headless
