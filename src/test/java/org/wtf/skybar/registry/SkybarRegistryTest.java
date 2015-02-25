@@ -33,17 +33,17 @@ public class SkybarRegistryTest {
 
     @Test
     public void testVisitLineIncrementsCount() {
-        r.registerLine("foo", 33);
-        r.visitLine("foo", 33);
+        long index = r.registerLine("foo", 33);
+        r.visitLine(index);
 
         assertCount("foo", 1, 33, 1);
     }
 
     @Test
     public void testVisitLineIncrementsCountForOnlyTheCorrectLine() {
-        r.registerLine("foo", 33);
+        long index = r.registerLine("foo", 33);
         r.registerLine("foo", 44);
-        r.visitLine("foo", 33);
+        r.visitLine(index);
 
         assertCount("foo", 2, 33, 1);
     }
