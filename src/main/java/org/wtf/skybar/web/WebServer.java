@@ -2,22 +2,24 @@ package org.wtf.skybar.web;
 
 import org.eclipse.jetty.server.Server;
 import org.eclipse.jetty.server.ServerConnector;
+import org.eclipse.jetty.server.handler.ContextHandler;
+import org.eclipse.jetty.server.handler.ContextHandlerCollection;
 import org.eclipse.jetty.servlet.DefaultServlet;
 import org.eclipse.jetty.servlet.ServletContextHandler;
 import org.eclipse.jetty.servlet.ServletHolder;
 import org.eclipse.jetty.util.resource.Resource;
 import org.eclipse.jetty.util.resource.ResourceCollection;
 import org.wtf.skybar.registry.SkybarRegistry;
-
 import java.io.File;
 import java.io.IOException;
-import java.net.URL;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 
 
 public class WebServer {
+    public static final String SOURCE_PATH_SYS_PROPERTY = "skybar.source.path";
+    public static final String SOURCE_PATH_ENV_VAR_NAME = "SKYBAR_SOURCE_PATH";
 
     public void start(int port) {
         try {
@@ -25,24 +27,43 @@ public class WebServer {
             ServerConnector connector = new ServerConnector(server);
             connector.setPort(port);
             server.addConnector(connector);
+            ContextHandlerCollection handlers = new ContextHandlerCollection();
 
             ServletContextHandler handler = new ServletContextHandler();
+            handler.setContextPath("/");
             handler.setBaseResource(getBaseResource());
             handler.addServlet(DefaultServlet.class, "/");
-
+            handler.setWelcomeFiles(new String[]{"index.html"});
             handler.addServlet(new ServletHolder(new CoverageServlet(SkybarRegistry.registry)), "/coverage.json");
+            handlers.addHandler(handler);
 
-            // TODO: Add servlet to deliver Java source files
+            // Add servlet to deliver Java source files
+            ContextHandler sourceContext = new ContextHandler();
+            sourceContext.setContextPath("/source");
+            SourceLister sourceLister = new SourceLister(getSourcePathString());
+            sourceLister.setDirectoriesListed(true);
+            sourceContext.setHandler(sourceLister);
+            handlers.addHandler(sourceContext);
+
             // TODO: Add a WebSocketServlet for pushing touched classes live
 
-
-
-            server.setHandler(handler);
-
+            server.setHandler(handlers);
             server.start();
         } catch (Exception e) {
             throw new RuntimeException(e);
         }
+    }
+
+    private String getSourcePathString() {
+        String sourcePath = System.getProperty(SOURCE_PATH_SYS_PROPERTY);
+        if (sourcePath == null) {
+            sourcePath = System.getenv(SOURCE_PATH_ENV_VAR_NAME);
+        }
+        if (sourcePath == null) {
+            File srcDir = new File("src");
+            sourcePath = srcDir.getAbsolutePath();
+        }
+        return sourcePath;
     }
 
     private ResourceCollection getBaseResource() throws IOException {
