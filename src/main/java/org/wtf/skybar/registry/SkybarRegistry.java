@@ -168,14 +168,15 @@ public class SkybarRegistry {
 
         phaser.readerLock();
         try {
-            // need to write into inactiveCounts before it starts getting used so that all indexes have an adder
-            // this is allowed because we're only reading from active
-            activeIndexesSinceLastFlip.forEach(l -> inactiveCounts.put(l, new LongAdder()));
 
             // swap with write to active last since that's volatile
             List<Long> tmpIndexes = inactiveIndexesSinceLastFlip;
             inactiveIndexesSinceLastFlip = activeIndexesSinceLastFlip;
             activeIndexesSinceLastFlip = tmpIndexes;
+
+            // need to write into inactiveCounts before it starts getting used so that all indexes have ]
+            // an adder. Read post-switch to avoid CME.
+            inactiveIndexesSinceLastFlip.forEach(l -> inactiveCounts.put(l, new LongAdder()));
 
             ConcurrentHashMap<Long, LongAdder> tmpCounts = inactiveCounts;
             inactiveCounts = activeCounts;
