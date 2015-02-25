@@ -50,6 +50,7 @@ public class SkybarRegistry {
     /**
      * Used to quickly take a snapshot of listeners so we don't hold the lock while actually calling listeners
      */
+    @GuardedBy("this")
     private final List<DeltaListener> listenersCopy = new ArrayList<>();
 
     /**
