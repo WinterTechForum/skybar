@@ -13,7 +13,20 @@ Hello SKYBAR
       <h1>Hello {{yourName}}!</h1>
     </div>
     <ul>
-        <li ng-repeat="sourceFile in sourceFiles()">{{sourceFile}}</li>
+        <li ng-repeat="sourceFile in sourceFiles()"><a href="#" ng-click="loadSource(sourceFile)">{{sourceFile}}</a></li>
     </ul>
+
+    <table >
+        <tr ng-repeat="line in sourceLines track by $index">
+            <td><pre>{{$index+1}}</pre></td>
+            <td><pre>{{getExecCount(coverage, currentSourceFile, $index+1)}}</pre></td>
+            <td><pre>{{line.text}}</pre></td>
+        </tr>
+    </table>
+</div>
+<div  ng-controller="WebSocketController">
+    <span>{{time.currentTime}}</span>
+
+</div>
 </body>
 </html>
