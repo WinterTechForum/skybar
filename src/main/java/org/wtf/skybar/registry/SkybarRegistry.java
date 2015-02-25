@@ -34,12 +34,15 @@ public class SkybarRegistry {
     }
 
     /**
-     * Called each time a line is visted
+     * Called each time a line is visited
      */
     public void visitLine(String sourceFileName, int lineNumber) {
         visits.get(sourceFileName).get(lineNumber).increment();
     }
 
+    /**
+     * Can only be called once for a given source / line pair
+     */
     public void registerLine(String sourceName, int lineNumber) {
         visits.compute(sourceName, (sourceFile, map) -> {
             if (map == null) {
