@@ -5,11 +5,20 @@
     <link type="text/css" href="skybar.css" rel="stylesheet" />
 </head>
 <body ng-controller="SkybarController">
-Hello SKYBAR
-
+<table >
+<tr>
+    <tr>
+      <th>Source Files</th>
+      <th>&nbsp;</th>
+      <th>{{currentSourceFile}}</th>
+    </tr>
+    <td valign="top">
     <ul>
         <li ng-repeat="sourceFile in sourceFiles()"><a href="#" ng-click="loadSource(sourceFile)">{{sourceFile}}</a></li>
     </ul>
+    </td>
+    <td>&nbsp;&nbsp;</td>
+    <td>
 
     <table >
         <tr ng-repeat="line in sourceLines track by $index"
@@ -19,10 +28,13 @@ Hello SKYBAR
             <td><pre>{{line.text}}</pre></td>
         </tr>
     </table>
+    </td>
 </div>
 <div  ng-controller="WebSocketController">
     <span>{{time}}</span>
 
 </div>
+</tr>
+</table>
 </body>
 </html>
