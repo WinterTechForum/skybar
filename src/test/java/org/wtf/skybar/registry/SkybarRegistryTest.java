@@ -24,11 +24,28 @@ public class SkybarRegistryTest {
     }
 
     @Test
+    public void testRegisterForDifferentLineInSameFile() {
+        r.registerLine("foo", 33);
+        r.registerLine("foo", 44);
+
+        assertCount("foo", 2, 44, 0);
+    }
+
+    @Test
     public void testVisitLineIncrementsCount() {
         r.registerLine("foo", 33);
         r.visitLine("foo", 33);
 
         assertCount("foo", 1, 33, 1);
+    }
+
+    @Test
+    public void testVisitLineIncrementsCountForOnlyTheCorrectLine() {
+        r.registerLine("foo", 33);
+        r.registerLine("foo", 44);
+        r.visitLine("foo", 33);
+
+        assertCount("foo", 2, 33, 1);
     }
 
     /**
