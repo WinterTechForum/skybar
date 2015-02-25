@@ -15,8 +15,11 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+import java.util.Map;
 import org.eclipse.jetty.websocket.server.WebSocketHandler;
 import org.eclipse.jetty.websocket.servlet.WebSocketServletFactory;
+import org.wtf.skybar.time.TimeGenerator;
+import org.wtf.skybar.time.TimeListener;
 
 
 public class WebServer {
@@ -71,6 +74,15 @@ public class WebServer {
             wsCoverageContext.setHandler(wsCoverageHandler);
             handlers.addHandler(wsCoverageContext);
 
+            // Make sure the Registry calls all its DeltaListeners every second
+            TimeGenerator.getInstance().register(new TimeListener() {
+                private final Map<String,Map<Integer,Long>> tmpMap = new java.util.HashMap<>();
+                @Override
+                public void onTime(long timestamp) {
+                    SkybarRegistry.registry.updateListeners(tmpMap);
+                }
+            });
+            
             server.setHandler(handlers);
             server.start();
         } catch (Exception e) {
