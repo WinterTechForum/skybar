@@ -2,31 +2,18 @@
 <head>
     <script src="/webjars/angularjs/1.3.13/angular.min.js"></script>
     <script src="skybar.js"></script>
-    <style>
-        .covered {
-            background-color: darkseagreen;
-        }
-        .uncovered {
-            background-color: pink;
-        }
-    </style>
+    <link type="text/css" href="skybar.css" rel="stylesheet" />
 </head>
 <body ng-controller="SkybarController">
 Hello SKYBAR
 
-    <div>
-      <label>Name:</label>
-      <input type="text" ng-model="yourName" placeholder="Enter a name here">
-      <hr>
-      <h1>Hello {{yourName}}!</h1>
-    </div>
     <ul>
         <li ng-repeat="sourceFile in sourceFiles()"><a href="#" ng-click="loadSource(sourceFile)">{{sourceFile}}</a></li>
     </ul>
 
     <table >
         <tr ng-repeat="line in sourceLines track by $index"
-                ng-class="{covered: getExecCount(coverage, currentSourceFile, $index+1) > 0, uncovered: !getExecCount(coverage, currentSourceFile, $index+1)}">
+                ng-class="{covered: (getExecCount(coverage, currentSourceFile, $index+1) > 0), uncovered: (getExecCount(coverage, currentSourceFile, $index+1) === 0)}">
             <td><pre>{{$index+1}}</pre></td>
             <td><pre>{{getExecCount(coverage, currentSourceFile, $index+1)}}</pre></td>
             <td><pre>{{line.text}}</pre></td>
