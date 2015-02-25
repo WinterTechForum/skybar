@@ -154,6 +154,10 @@ public class SkybarRegistry {
         return copy;
     }
 
+    public synchronized void unregisterListener(DeltaListener listener) {
+        listeners.remove(listener);
+    }
+
     /**
      * Swap the inactive and active data structures
      */

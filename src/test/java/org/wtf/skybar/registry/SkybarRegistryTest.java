@@ -2,6 +2,9 @@ package org.wtf.skybar.registry;
 
 import java.util.HashMap;
 import java.util.Map;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 
@@ -12,9 +15,16 @@ public class SkybarRegistryTest {
 
     private SkybarRegistry r;
 
+    private ExecutorService ex = Executors.newCachedThreadPool();
+
     @Before
     public void setUp() throws Exception {
         r = new SkybarRegistry();
+    }
+
+    @After
+    public void tearDown() throws Exception {
+        ex.shutdownNow();
     }
 
     @Test
@@ -94,6 +104,30 @@ public class SkybarRegistryTest {
 
         assertSnapshotCount(data, "foo", 2, 33, 1);
         assertSnapshotCount(data, "foo", 2, 44, 2);
+    }
+
+    @Test
+    public void testUnregisteredListenerDoesntGetUpdates() {
+        long index33 = r.registerLine("foo", 33);
+
+        HashMap<String, Map<Integer, Long>> data = new HashMap<>();
+        SkybarRegistry.DeltaListener listener = data::putAll;
+        r.getCurrentSnapshot(listener);
+
+        r.visitLine(index33);
+        r.updateListeners(new HashMap<>());
+
+        assertSnapshotCount(data, "foo", 1, 33, 1);
+
+        r.unregisterListener(listener);
+
+        data.clear();
+        // data should not be updated
+
+        r.visitLine(index33);
+        r.updateListeners(new HashMap<>());
+
+        assertTrue(data.isEmpty());
     }
 
     private void assertSnapshotCount(String source, int numLines, int lineNum, int count) {
