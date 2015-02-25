@@ -19,7 +19,7 @@ Hello SKYBAR
     <table >
         <tr ng-repeat="line in sourceLines track by $index">
             <td><pre>{{$index+1}}</pre></td>
-            <td><pre>{{line.execCount}}</pre></td>
+            <td><pre>{{getExecCount(coverage, currentSourceFile, $index+1)}}</pre></td>
             <td><pre>{{line.text}}</pre></td>
         </tr>
     </table>

@@ -9,21 +9,6 @@ angular.module('skybar', [])
       return sourceFiles;
     };
 
-    function updateCoverage() {
-        $http.get(
-          '/coverage.json'
-        ).success(function (data) {
-            //console.log("data: " + JSON.stringify(data));
-            $scope.coverage = data
-          }).error(function (data, status) {
-            console.log("error loading coverage data:");
-            console.log("status: " + status);
-            console.log("data: " + data);
-            $window.alert("Error loading coverage data.")
-          })
-      }
-    updateCoverage();
-    $interval(updateCoverage, 2000);
 
     $scope.loadSource = function(sourceFile) {
       console.log("sourceFile = "+sourceFile)
@@ -44,6 +29,7 @@ angular.module('skybar', [])
 
              $scope.sourceLines.push({ "text": sourceLines[lineNum], "execCount": execCount })
           }
+          $scope.currentSourceFile = sourceFile
 
           console.log($scope.sourceLines)
         }).error(function (data, status) {
@@ -53,6 +39,25 @@ angular.module('skybar', [])
           $window.alert("Error loading coverage data.")
         })
     }
+
+    $scope.getExecCount = function(coverage, sourceFile, lineNumber) {
+      return coverage[sourceFile][lineNumber.toString()] || 0
+    }
+    function updateCoverage() {
+        $http.get(
+          '/coverage.json'
+        ).success(function (data) {
+            //console.log("data: " + JSON.stringify(data));
+            $scope.coverage = data
+          }).error(function (data, status) {
+            console.log("error loading coverage data:");
+            console.log("status: " + status);
+            console.log("data: " + data);
+            $window.alert("Error loading coverage data.")
+          })
+      }
+    updateCoverage();
+    $interval(updateCoverage, 2000);
 
 
   }]).controller('WebSocketController', ['$scope', '$window', function ($scope, $window) {
