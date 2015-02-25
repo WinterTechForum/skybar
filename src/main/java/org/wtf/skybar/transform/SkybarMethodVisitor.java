@@ -26,12 +26,11 @@ class SkybarMethodVisitor extends WorkingLineNumberVisitor {
 //        mv.visitLdcInsn("Running line " + lineNumber + " of source file " + sourceFile);
 //        mv.visitMethodInsn(INVOKEVIRTUAL, "java/io/PrintStream", "println", "(Ljava/lang/String;)V", false);
 
-        mv.visitFieldInsn(GETSTATIC, "org/wtf/skybar/registry/SkybarRegistry", "registry", "Lorg/wtf/skybar/registry/SkybarRegistry;");
-        mv.visitLdcInsn(sourceFile);
-        mv.visitLdcInsn(lineNumber);
-        mv.visitMethodInsn(INVOKEVIRTUAL, "org/wtf/skybar/registry/SkybarRegistry", "visitLine", "(Ljava/lang/String;I)V", false);
+        final long index = SkybarRegistry.registry.registerLine(sourceFile, lineNumber);
 
-        SkybarRegistry.registry.registerLine(sourceFile, lineNumber);
+        mv.visitFieldInsn(GETSTATIC, "org/wtf/skybar/registry/SkybarRegistry", "registry", "Lorg/wtf/skybar/registry/SkybarRegistry;");
+        mv.visitLdcInsn(index);
+        mv.visitMethodInsn(INVOKEVIRTUAL, "org/wtf/skybar/registry/SkybarRegistry", "visitLine", "(J)V", false);
     }
 
     @Override
