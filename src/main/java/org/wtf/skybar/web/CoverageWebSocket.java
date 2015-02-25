@@ -1,6 +1,8 @@
 package org.wtf.skybar.web;
 
 import java.util.Map;
+import java.util.function.Predicate;
+import java.util.stream.Collectors;
 import org.eclipse.jetty.util.ajax.JSON;
 import org.eclipse.jetty.util.log.Log;
 import org.eclipse.jetty.util.log.Logger;
@@ -57,8 +59,36 @@ public class CoverageWebSocket implements WebSocketListener, DeltaListener {
         sendSnapshot(diffSnapshot);
     }
 
+    /**
+     * Send snapshot to this client.  Will send an empty map {} if nothing new happened.
+     * @param snapshot snapshot coverage count.
+     */
     private void sendSnapshot(Map<String,Map<Integer,Long>> snapshot) {
-        String json = JSON.toString(snapshot);
+        Map<String,Map<Integer,Long>> filtered = snapshot
+                .entrySet()
+                .stream()
+                .filter(p -> hasCounts(p.getValue()))
+                .collect(Collectors.toMap(p -> p.getKey(), p -> p.getValue()));
+        String json = JSON.toString(filtered);
         outbound.getRemote().sendStringByFuture(json);
+    }
+
+    /**
+     * Test if the coverage counts are non-empty and non-zero.
+     * @param lineCounts to check for empty/zero condition.
+     * @return true if there are counts, false otherwise.
+     */
+    private static boolean hasCounts(Map<Integer,Long> lineCounts) {
+        if (lineCounts == null || lineCounts.isEmpty()) {
+            return false;
+        }
+        boolean hasCount = false;
+        for (Map.Entry<Integer,Long> ent: lineCounts.entrySet()) {
+            if (ent.getValue() > 0L) {
+                hasCount = true;
+                break;
+            }
+        }
+        return hasCount;
     }
 }
