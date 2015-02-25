@@ -2,7 +2,7 @@
 Build:
 
 cd skybar
-mvn clean install
+mvn clean install or gradlew clean assemble
 cd ../skybar-demo
 mvn clean install
 
