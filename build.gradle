@@ -49,6 +49,10 @@ shadowJar {
   relocate 'org.objectweb.asm', 'org.wtf.skybar.shaded.asm'
   relocate 'javax.servlet', 'org.wtf.skybar.shaded.javax.servlet'
   relocate 'org.eclipse.jetty', 'org.wtf.skybar.shaded.org.eclipse.jetty'
+
+  manifest {
+    attributes 'Premain-Class': 'org.wtf.skybar.agent.SkybarAgent'
+  }
 }
 
 task wrapper(type: Wrapper) {
