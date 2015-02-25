@@ -6,6 +6,7 @@
     background-color: pink;
 }
 
-#pre {
+pre {
     font-size: 10pt;
+    margin: 0;
 }
