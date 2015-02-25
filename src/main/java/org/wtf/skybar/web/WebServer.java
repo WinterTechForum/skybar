@@ -50,18 +50,6 @@ public class WebServer {
             sourceContext.setHandler(sourceLister);
             handlers.addHandler(sourceContext);
 
-            // Add a sample WebSocketServlet for pushing a simple {time:millis} value to client.
-            ContextHandler wsTimeContext = new ContextHandler();
-            wsTimeContext.setContextPath("/time");
-            WebSocketHandler wsTimeHandler = new WebSocketHandler() {
-                @Override
-                public void configure(WebSocketServletFactory wssf) {
-                    wssf.register(TimeWebSocket.class);
-                }
-            };
-            wsTimeContext.setHandler(wsTimeHandler);
-            handlers.addHandler(wsTimeContext);
-            
             // Add a WebSocketServlet for pushing touched classes live
             ContextHandler wsCoverageContext = new ContextHandler();
             wsCoverageContext.setContextPath("/livecoverage");
