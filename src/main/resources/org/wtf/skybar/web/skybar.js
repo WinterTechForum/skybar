@@ -52,8 +52,9 @@ angular.module('skybar', [])
         };
 
         function onMessage(evt) {
-            scope.time = JSON.parse(evt.data)
-            scope.$digest()
+            var parsed = JSON.parse(evt.data);
+            $scope.time = parsed.time;
+            $scope.$digest();
 
         };
 

@@ -3,4 +3,5 @@
 target
 .gradle
 build
-nb*.xml
+nb-*.xml
+.nb-*

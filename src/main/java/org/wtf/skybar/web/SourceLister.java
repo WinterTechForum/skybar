@@ -13,7 +13,7 @@ import org.eclipse.jetty.util.resource.Resource;
  * Use Jetty ResourceHandler to search a path-style set of directories for a resource.
  */
 public class SourceLister extends ResourceHandler {
-    private static final Logger LOG = Log.getLogger(ResourceHandler.class);
+    private static final Logger LOG = Log.getLogger(SourceLister.class);
     private final List<Resource> searchPaths;
 
     /**

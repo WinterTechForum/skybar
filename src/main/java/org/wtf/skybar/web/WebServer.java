@@ -15,6 +15,8 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+import org.eclipse.jetty.websocket.server.WebSocketHandler;
+import org.eclipse.jetty.websocket.servlet.WebSocketServletFactory;
 
 
 public class WebServer {
@@ -45,7 +47,17 @@ public class WebServer {
             sourceContext.setHandler(sourceLister);
             handlers.addHandler(sourceContext);
 
-            // TODO: Add a WebSocketServlet for pushing touched classes live
+            // Add a WebSocketServlet for pushing touched classes live
+            ContextHandler wsContext = new ContextHandler();
+            wsContext.setContextPath("/time");
+            WebSocketHandler wsHandler = new WebSocketHandler() {
+                @Override
+                public void configure(WebSocketServletFactory wssf) {
+                    wssf.register(TimeWebSocket.class);
+                }
+            };
+            wsContext.setHandler(wsHandler);
+            handlers.addHandler(wsContext);
 
             server.setHandler(handlers);
             server.start();
