@@ -1,6 +1,7 @@
 package org.wtf.skybar.web;
 
 import java.io.File;
+import java.io.IOException;
 import java.net.MalformedURLException;
 import java.util.List;
 import org.eclipse.jetty.server.handler.ResourceHandler;
@@ -19,17 +20,19 @@ public class SourceLister extends ResourceHandler {
      * String with "path.separator" delimiters to search for source files.
      *
      * @param searchPaths delimited string.
+     * @throws java.io.IOException if given an invalid path/directory.
      */
-    public SourceLister(String searchPaths) {
+    public SourceLister(String searchPaths) throws IOException {
         String[] split = searchPaths.split(System.getProperty("path.separator"));
         this.searchPaths = new java.util.ArrayList<>(split.length);
         for (String str: split) {
-            File dir = new File(str);
+            File dir = new File(str).getCanonicalFile();
             if (!dir.isDirectory()) {
-                throw new IllegalArgumentException("Invalid search path, not a directory: "+
+                throw new IOException("Invalid search path, not a directory: "+
                         dir.getAbsolutePath());
             }
             this.searchPaths.add(Resource.newResource(dir));
+            LOG.info("Skybar source path added: "+dir.getAbsolutePath());
         }
         assert(this.searchPaths.size() > 0);
     }
@@ -47,8 +50,12 @@ public class SourceLister extends ResourceHandler {
             this.setBaseResource(base);
             result = super.getResource(path);
             if (result != null) {
+                LOG.debug("Skybar source "+path+" found: "+result);
                 break;
             }
+        }
+        if (result == null) {
+            LOG.warn("Skybar source NOT found: "+path);
         }
         return result;
     }

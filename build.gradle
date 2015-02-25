@@ -21,6 +21,8 @@ description = """"""
 sourceCompatibility = 1.8
 targetCompatibility = 1.8
 
+defaultTasks 'clean', 'build', 'shadowJar'
+
 repositories {
   jcenter()
 }

@@ -6,6 +6,7 @@ import java.lang.invoke.MethodType;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.atomic.LongAdder;
 import javax.annotation.Nonnull;
 import javax.annotation.concurrent.ThreadSafe;
@@ -16,18 +17,29 @@ public class SkybarRegistry {
     public static final SkybarRegistry registry = new SkybarRegistry();
 
     // Holds the count of each line of each source file
-    private final ConcurrentHashMap<String, Map<Integer, LongAdder>> visits = new ConcurrentHashMap<>();
+    private final ConcurrentHashMap<Long, LongAdder> visits = new ConcurrentHashMap<>();
+    private final AtomicLong nextIndex = new AtomicLong();
+
+    private final ConcurrentHashMap<Long, SourceLocation> indexToSourceLoc = new ConcurrentHashMap<>();
 
     @Nonnull
     public Map<String, Map<Integer, Integer>> getSnapshot() {
 
         HashMap<String, Map<Integer, Integer>> snapshot = new HashMap<>();
 
-        visits.forEach((source, adders) -> {
-            HashMap<Integer, Integer> counts = new HashMap<>();
-            snapshot.put(source, counts);
+        visits.forEach((index, adder) -> {
 
-            adders.forEach((lineNum, adder) -> counts.put(lineNum, adder.intValue()));
+            SourceLocation sl = indexToSourceLoc.get(index);
+
+            snapshot.compute(sl.source, (source, counts) -> {
+                if (counts == null) {
+                    HashMap<Integer, Integer> snapshotCounts = new HashMap<>();
+                    snapshotCounts.put(sl.line, adder.intValue());
+                    return snapshotCounts;
+                }
+                counts.put(sl.line, adder.intValue());
+                return counts;
+            });
         });
 
         return snapshot;
@@ -36,30 +48,24 @@ public class SkybarRegistry {
     /**
      * Called each time a line is visited
      */
-    public void visitLine(String sourceFileName, int lineNumber) {
-        visits.get(sourceFileName).get(lineNumber).increment();
+    public void visitLine(long index) {
+        visits.get(index).increment();
     }
 
     /**
      * Can only be called once for a given source / line pair
+     *
+     * @param sourceName path to source file
+     * @param lineNumber line number
+     * @return index to be used with visitLine
      */
-    public void registerLine(String sourceName, int lineNumber) {
-        visits.compute(sourceName, (sourceFile, map) -> {
-            if (map == null) {
-                // no map for the source file; create one with a single entry with a 0 count
-                HashMap<Integer, LongAdder> newCounterMap = new HashMap<>();
-                newCounterMap.put(lineNumber, new LongAdder());
-                return newCounterMap;
-            }
+    public long registerLine(String sourceName, int lineNumber) {
+        long index = nextIndex.incrementAndGet();
 
-            // map already exists for this source name; insert a new adder
-            if (map.put(lineNumber, new LongAdder()) != null) {
-                throw new IllegalStateException(
-                        "Duplicate call for source <" + sourceName + "> and line <" + lineNumber + ">");
-            }
+        indexToSourceLoc.put(index, new SourceLocation(sourceName, lineNumber));
+        visits.put(index, new LongAdder());
 
-            return map;
-        });
+        return index;
     }
 
     public static CallSite bootstrap(MethodHandles.Lookup caller, String name, MethodType type, String sourceName,
@@ -67,5 +73,15 @@ public class SkybarRegistry {
         // TODO: (Advanced!)
         // Create a MethodHandle for the counter and return a ConstantCallSite for that
         return null;
+    }
+
+    private static class SourceLocation {
+        final String source;
+        final int line;
+
+        private SourceLocation(String source, int line) {
+            this.source = source;
+            this.line = line;
+        }
     }
 }

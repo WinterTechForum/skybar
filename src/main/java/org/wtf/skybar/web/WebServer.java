@@ -54,14 +54,14 @@ public class WebServer {
         }
     }
 
-    private String getSourcePathString() {
+    private String getSourcePathString() throws IOException {
         String sourcePath = System.getProperty(SOURCE_PATH_SYS_PROPERTY);
         if (sourcePath == null) {
             sourcePath = System.getenv(SOURCE_PATH_ENV_VAR_NAME);
         }
         if (sourcePath == null) {
-            File srcDir = new File("src");
-            sourcePath = srcDir.getAbsolutePath();
+            File srcDir = new File("src/main/java");
+            sourcePath = srcDir.getCanonicalPath();
         }
         return sourcePath;
     }

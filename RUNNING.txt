@@ -2,11 +2,20 @@
 Build:
 
 cd skybar
-mvn clean install or gradlew clean assemble
+./gradlew clean shadowjar
+#mvn clean install or gradlew clean assemble
 cd ../skybar-demo
 mvn clean install
 
 Run skybar-demo:
 
 cd skybar
-java -javaagent:target/skybar-1.0-SNAPSHOT.jar -jar ../skybar-demo/target/skybar-demo-1.0-SNAPSHOT-jetty-console.war --headless
+
+# Set the location of the source to search
+export SKYBAR_SOURCE_PATH=../skybar-demo/src/main/java:src/main/java
+
+# Start with skybar agent
+java -javaagent:build/libs/skybar-1.0-SNAPSHOT-all.jar -jar ../skybar-demo/target/skybar-demo-1.0-SNAPSHOT-jetty-console.war --headless
+
+# Or start with both debugger and skybar agent enabled, then attach your debugger to port 9009
+java -agentlib:jdwp=transport=dt_socket,address=localhost:9009,server=y,suspend=y -javaagent:build/libs/skybar-1.0-SNAPSHOT-all.jar -jar ../skybar-demo/target/skybar-demo-1.0-SNAPSHOT-jetty-console.war --headless
