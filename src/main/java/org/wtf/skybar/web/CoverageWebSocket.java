@@ -1,6 +1,7 @@
 package org.wtf.skybar.web;
 
 import java.util.Map;
+import org.eclipse.jetty.util.ajax.JSON;
 import org.eclipse.jetty.util.log.Log;
 import org.eclipse.jetty.util.log.Logger;
 import org.eclipse.jetty.websocket.api.Session;
@@ -57,34 +58,7 @@ public class CoverageWebSocket implements WebSocketListener, DeltaListener {
     }
 
     private void sendSnapshot(Map<String,Map<Integer,Long>> snapshot) {
-        StringBuilder sb = new StringBuilder(1024);
-        Map<Integer,Long> lineNumToCount;
-        String sourcePath;
-        int cnt = 0;
-        sb.append('{');
-        for (Map.Entry<String,Map<Integer,Long>> ent: snapshot.entrySet()) {
-            sourcePath = ent.getKey();
-            lineNumToCount = ent.getValue();
-            if (lineNumToCount == null || lineNumToCount.isEmpty()) {
-                continue;
-            }
-            if (cnt > 0) {
-                sb.append(',');
-            }
-            sb.append("\"").append(sourcePath).append("\":{");
-            appendLineNumToCount(sb, lineNumToCount);
-            ++cnt;
-        }
-        sb.append('}');
-    }
-
-    private void appendLineNumToCount(StringBuilder sb, Map<Integer, Long> lineNumToCount) {
-        int cnt = 0;
-        lineNumToCount.entrySet().stream().forEach((ent) -> {
-            if (cnt > 0) {
-                sb.append(',');
-            }
-            sb.append(ent.getKey()).append(':').append(ent.getValue());
-        });
+        String json = JSON.toString(snapshot);
+        outbound.getRemote().sendStringByFuture(json);
     }
 }
