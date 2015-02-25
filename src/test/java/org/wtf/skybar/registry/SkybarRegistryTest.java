@@ -72,18 +72,47 @@ public class SkybarRegistryTest {
         assertSnapshotCount("foo", 2, 44, 2);
     }
 
+    @Test
+    public void testUpdateListenersCallsListenerWithDelta() {
+        long index33 = r.registerLine("foo", 33);
+        long index44 = r.registerLine("foo", 44);
+        r.visitLine(index33);
+        r.updateListeners(new HashMap<>());
+
+        HashMap<String, Map<Integer, Long>> data = new HashMap<>();
+
+        r.getCurrentSnapshot(data::putAll);
+
+        // update existing line
+        r.visitLine(index33);
+
+        // update a never before visited line
+        r.visitLine(index44);
+        r.visitLine(index44);
+
+        r.updateListeners(new HashMap<>());
+
+        assertSnapshotCount(data, "foo", 2, 33, 1);
+        assertSnapshotCount(data, "foo", 2, 44, 2);
+    }
+
+    private void assertSnapshotCount(String source, int numLines, int lineNum, int count) {
+        assertSnapshotCount(r.getCurrentSnapshot((delta1) -> { }), source, numLines, lineNum, count);
+    }
+
     /**
+     * @param data     count data
      * @param source   source file
      * @param numLines number of lines for the source
      * @param lineNum  line number to check
      * @param count    expected count
      */
-    private void assertSnapshotCount(String source, int numLines, int lineNum, int count) {
-        Map<String, Map<Integer, Long>> j = r.getCurrentSnapshot((delta) -> { });
-        assertEquals(1, j.size());
-        assertEquals(source, j.keySet().iterator().next());
+    private void assertSnapshotCount(Map<String, Map<Integer, Long>> data, String source, int numLines, int lineNum,
+            int count) {
+        assertEquals(1, data.size());
+        assertEquals(source, data.keySet().iterator().next());
 
-        Map<Integer, Long> counts = j.get(source);
+        Map<Integer, Long> counts = data.get(source);
         assertEquals(numLines, counts.size());
         assertTrue(counts.containsKey(lineNum));
         assertEquals(count, counts.get(lineNum).intValue());
