@@ -2,6 +2,14 @@
 <head>
     <script src="/webjars/angularjs/1.3.13/angular.min.js"></script>
     <script src="skybar.js"></script>
+    <style>
+        .covered {
+            background-color: darkseagreen;
+        }
+        .uncovered {
+            background-color: pink;
+        }
+    </style>
 </head>
 <body ng-controller="SkybarController">
 Hello SKYBAR
@@ -17,7 +25,8 @@ Hello SKYBAR
     </ul>
 
     <table >
-        <tr ng-repeat="line in sourceLines track by $index">
+        <tr ng-repeat="line in sourceLines track by $index"
+                ng-class="{covered: getExecCount(coverage, currentSourceFile, $index+1) > 0, uncovered: !getExecCount(coverage, currentSourceFile, $index+1)}">
             <td><pre>{{$index+1}}</pre></td>
             <td><pre>{{getExecCount(coverage, currentSourceFile, $index+1)}}</pre></td>
             <td><pre>{{line.text}}</pre></td>

@@ -41,7 +41,8 @@ angular.module('skybar', [])
     }
 
     $scope.getExecCount = function(coverage, sourceFile, lineNumber) {
-      return coverage[sourceFile][lineNumber.toString()] || 0
+      var sourceFileCoverage = coverage[sourceFile]
+      return sourceFileCoverage[lineNumber.toString()] || ""
     }
     function updateCoverage() {
         $http.get(
