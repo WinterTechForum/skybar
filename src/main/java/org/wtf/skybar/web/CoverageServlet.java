@@ -22,6 +22,6 @@ public class CoverageServlet extends HttpServlet {
     @Override
     protected void doGet(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
         resp.setContentType("application/json");
-        resp.getWriter().write(JSON.toString(registry.toJson()));
+        resp.getWriter().write(JSON.toString(registry.getSnapshot()));
     }
 }

@@ -16,21 +16,33 @@ public class SkybarRegistry {
     public static final SkybarRegistry registry = new SkybarRegistry();
 
     // Holds the count of each line of each source file
-    private final Map<String, Map<Integer, LongAdder>> visits = new ConcurrentHashMap<>();
+    private final ConcurrentHashMap<String, Map<Integer, LongAdder>> visits = new ConcurrentHashMap<>();
 
     @Nonnull
-    public Map<String, Map<Integer, Integer>> toJson() {
-        //TODO: We need to return a JSON map representing the covered lines for each source file
-        return new HashMap<>();
+    public Map<String, Map<Integer, Integer>> getSnapshot() {
+
+        HashMap<String, Map<Integer, Integer>> snapshot = new HashMap<>();
+
+        visits.forEach((source, adders) -> {
+            HashMap<Integer, Integer> counts = new HashMap<>();
+            snapshot.put(source, counts);
+
+            adders.forEach((lineNum, adder) -> counts.put(lineNum, adder.intValue()));
+        });
+
+        return snapshot;
     }
 
     /**
-     * Called each time a line is visted
+     * Called each time a line is visited
      */
     public void visitLine(String sourceFileName, int lineNumber) {
         visits.get(sourceFileName).get(lineNumber).increment();
     }
 
+    /**
+     * Can only be called once for a given source / line pair
+     */
     public void registerLine(String sourceName, int lineNumber) {
         visits.compute(sourceName, (sourceFile, map) -> {
             if (map == null) {
