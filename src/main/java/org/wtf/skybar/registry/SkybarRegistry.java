@@ -1,8 +1,5 @@
 package org.wtf.skybar.registry;
 
-import java.lang.invoke.CallSite;
-import java.lang.invoke.MethodHandles;
-import java.lang.invoke.MethodType;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -24,10 +21,6 @@ public class SkybarRegistry {
     @GuardedBy("phaser")
     private volatile ConcurrentHashMap<Long, LongAdder> activeCounts = new ConcurrentHashMap<>();
     private ConcurrentHashMap<Long, LongAdder> inactiveCounts = new ConcurrentHashMap<>();
-
-    @GuardedBy("phaser")
-    private volatile List<Long> activeIndexesSinceLastFlip = new ArrayList<>();
-    private List<Long> inactiveIndexesSinceLastFlip = new ArrayList<>();
 
     private final WriterReaderPhaser phaser = new WriterReaderPhaser();
 
@@ -59,7 +52,17 @@ public class SkybarRegistry {
     public void visitLine(long index) {
         long l = phaser.writerCriticalSectionEnter();
         try {
-            activeCounts.get(index).increment();
+            activeCounts.compute(index, (count, adder) -> {
+                if (adder == null) {
+                    LongAdder longAdder = new LongAdder();
+                    longAdder.increment();
+                    return longAdder;
+                }
+
+                adder.increment();
+
+                return adder;
+            });
         } finally {
             phaser.writerCriticalSectionExit(l);
         }
@@ -80,7 +83,6 @@ public class SkybarRegistry {
             index = nextIndex.incrementAndGet();
             indexToSourceLoc.put(index, new SourceLocation(sourceName, lineNumber));
             activeCounts.put(index, new LongAdder());
-            activeIndexesSinceLastFlip.add(index);
         } finally {
             phaser.writerCriticalSectionExit(l);
         }
@@ -164,20 +166,10 @@ public class SkybarRegistry {
     private void flipPhase() {
 
         clearAdders(inactiveCounts);
-        inactiveIndexesSinceLastFlip.clear();
 
         phaser.readerLock();
         try {
-
             // swap with write to active last since that's volatile
-            List<Long> tmpIndexes = inactiveIndexesSinceLastFlip;
-            inactiveIndexesSinceLastFlip = activeIndexesSinceLastFlip;
-            activeIndexesSinceLastFlip = tmpIndexes;
-
-            // need to write into inactiveCounts before it starts getting used so that all indexes have ]
-            // an adder. Read post-switch to avoid CME.
-            inactiveIndexesSinceLastFlip.forEach(l -> inactiveCounts.put(l, new LongAdder()));
-
             ConcurrentHashMap<Long, LongAdder> tmpCounts = inactiveCounts;
             inactiveCounts = activeCounts;
             activeCounts = tmpCounts;
@@ -186,13 +178,6 @@ public class SkybarRegistry {
         } finally {
             phaser.readerUnlock();
         }
-    }
-
-    public static CallSite bootstrap(MethodHandles.Lookup caller, String name, MethodType type, String sourceName,
-            int lineNumber) throws NoSuchMethodException, IllegalAccessException {
-        // TODO: (Advanced!)
-        // Create a MethodHandle for the counter and return a ConstantCallSite for that
-        return null;
     }
 
     private static void clearAdders(ConcurrentHashMap<Long, LongAdder> counts) {
