@@ -14,7 +14,9 @@
     </tr>
     <td valign="top">
     <ul>
-        <li ng-repeat="sourceFile in sourceFiles()"><a href="#" ng-click="loadSource(sourceFile)">{{sourceFile}}</a></li>
+        <li ng-repeat="sourceFile in sourceFiles() | orderBy:'toString()'">
+            <a href="#" ng-click="loadSource(sourceFile)">...{{sourceFile.substring(sourceFile.indexOf('/', 32))}}</a>
+        </li>
     </ul>
     </td>
     <td>&nbsp;&nbsp;</td>
