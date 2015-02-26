@@ -1,3 +1,13 @@
+.linenum, .numVisits {
+    font-family: monospace;
+    width: 2em;
+    text-align: right;
+    padding: 0.3em;
+}
+.linenum {
+    color: gray;
+}
+
 .covered {
     background-color: #80ff80;
 }
@@ -14,4 +24,13 @@ pre {
 ul {
     list-style-type: none;
     padding-left: 0;
+}
+
+table {
+    border-collapse: collapse;
+}
+
+.line {
+    padding-left: 0.2em;
+    border-left: 1px solid lightgray;
 }
