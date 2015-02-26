@@ -38,7 +38,6 @@ public class WebServer {
             handler.setBaseResource(getBaseResource());
             handler.addServlet(DefaultServlet.class, "/");
             handler.setWelcomeFiles(new String[]{"index.html"});
-            handler.addServlet(new ServletHolder(new CoverageServlet(SkybarRegistry.registry)), "/coverage.json");
             handlers.addHandler(handler);
 
             // Add servlet to deliver Java source files
