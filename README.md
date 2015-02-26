@@ -19,7 +19,7 @@ This will produce `build/libs/skybar-[version]-all.jar`. Use this jar as the arg
 
 - `skybar.includedPackage`: package prefix to instrument, slash-separated as in `com/foo/bar/baz`. 
 - `skybar.serverPort`: port for web ui, defaults to `4321`.
-- `skybar.source.path`: filesystem path to source
+- `skybar.sourcePath`: filesystem path to source
 
 Here's an example invocation using the skybar demo app:
 
@@ -27,7 +27,7 @@ Here's an example invocation using the skybar demo app:
 java \
   -Dskybar.includedPackage=com/skybar/demo \
   -Dskybar.serverPort=4321 \
-  -Dskybar.source.path=../skybar-demo/src/main/java \
+  -Dskybar.sourcePath=../skybar-demo/src/main/java \
   -javaagent:path/to/skybar-1.0-SNAPSHOT-all.jar \
   -jar ../skybar-demo/target/skybar-demo-1.0-SNAPSHOT-jetty-console.war --headless
 ```

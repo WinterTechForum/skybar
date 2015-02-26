@@ -35,8 +35,8 @@ public final class SkybarStressTool {
 
     public void go(int durationSecs) throws Exception {
 
-        WebServer webServer = new WebServer();
-        webServer.start(12000);
+        WebServer webServer = new WebServer(12000, ".");
+        webServer.start();
 
         long seed = new Random().nextLong();
         System.out.println("Seed: " + seed);

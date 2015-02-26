@@ -1,31 +1,35 @@
 package org.wtf.skybar.web;
 
+import java.io.File;
+import java.io.IOException;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
 import org.eclipse.jetty.server.Server;
 import org.eclipse.jetty.server.ServerConnector;
 import org.eclipse.jetty.server.handler.ContextHandler;
 import org.eclipse.jetty.server.handler.ContextHandlerCollection;
 import org.eclipse.jetty.servlet.DefaultServlet;
 import org.eclipse.jetty.servlet.ServletContextHandler;
-import org.eclipse.jetty.servlet.ServletHolder;
 import org.eclipse.jetty.util.resource.Resource;
 import org.eclipse.jetty.util.resource.ResourceCollection;
-import org.wtf.skybar.registry.SkybarRegistry;
-import java.io.File;
-import java.io.IOException;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.List;
 import org.eclipse.jetty.websocket.server.WebSocketHandler;
 import org.eclipse.jetty.websocket.servlet.WebSocketServletFactory;
+import org.wtf.skybar.registry.SkybarRegistry;
 import org.wtf.skybar.time.RegistryUpdateListeners;
 
 
 public class WebServer {
-    public static final String SOURCE_PATH_SYS_PROPERTY = "skybar.source.path";
-    public static final String SOURCE_PATH_ENV_VAR_NAME = "SKYBAR_SOURCE_PATH";
     private Server server;
+    private final int port;
+    private final String sourcePath;
 
-    public void start(int port) {
+    public WebServer(int port, String sourcePath) {
+        this.port = port;
+        this.sourcePath = sourcePath;
+    }
+
+    public void start() {
         try {
             server = new Server();
             ServerConnector connector = new ServerConnector(server);
@@ -43,7 +47,7 @@ public class WebServer {
             // Add servlet to deliver Java source files
             ContextHandler sourceContext = new ContextHandler();
             sourceContext.setContextPath("/source");
-            SourceLister sourceLister = new SourceLister(getSourcePathString());
+            SourceLister sourceLister = new SourceLister(sourcePath);
             sourceLister.setDirectoriesListed(true);
             sourceContext.setHandler(sourceLister);
             handlers.addHandler(sourceContext);
@@ -70,18 +74,6 @@ public class WebServer {
         } catch (Exception e) {
             throw new RuntimeException(e);
         }
-    }
-
-    private String getSourcePathString() throws IOException {
-        String sourcePath = System.getProperty(SOURCE_PATH_SYS_PROPERTY);
-        if (sourcePath == null) {
-            sourcePath = System.getenv(SOURCE_PATH_ENV_VAR_NAME);
-        }
-        if (sourcePath == null) {
-            File srcDir = new File("src/main/java");
-            sourcePath = srcDir.getCanonicalPath();
-        }
-        return sourcePath;
     }
 
     private ResourceCollection getBaseResource() throws IOException {

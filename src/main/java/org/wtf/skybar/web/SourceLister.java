@@ -3,6 +3,7 @@ package org.wtf.skybar.web;
 import java.io.File;
 import java.io.IOException;
 import java.net.MalformedURLException;
+import java.util.ArrayList;
 import java.util.List;
 import org.eclipse.jetty.server.handler.ResourceHandler;
 import org.eclipse.jetty.util.log.Log;
@@ -24,7 +25,7 @@ public class SourceLister extends ResourceHandler {
      */
     public SourceLister(String searchPaths) throws IOException {
         String[] split = searchPaths.split(System.getProperty("path.separator"));
-        this.searchPaths = new java.util.ArrayList<>(split.length);
+        this.searchPaths = new ArrayList<>(split.length);
         for (String str: split) {
             File dir = new File(str).getCanonicalFile();
             if (!dir.isDirectory()) {
