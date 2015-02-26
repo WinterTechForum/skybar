@@ -1,34 +1,44 @@
+[![Build Status](https://semaphoreapp.com/api/v1/projects/c5cdee73-a0d4-47a6-a7f3-2b13a32969fb/360557/badge.png)](https://semaphoreapp.com/marshallpierce/skybar)
 # skybar
 Skybar: Live code coverage engine
 
+Skybar shows you a web UI of your java code with live-updating per-line execution counts.
+
 ![Skybar](https://raw.githubusercontent.com/WinterTechForum/skybar/master/skybar.jpg)
 
-Byte code transformation:
-* Learn byte code (HelloWorldByteCode)
-* Learn ASM code (HelloWorldAsm)
-* Complete the LineCountingMethodVisitor
+For a convenient toy app to try it out with, see [Skybar Demo](https://github.com/WinterTechForum/skybar-demo).
 
-Registry:
-* Complete the SkybarRegistry
+# Usage
+Build the jar:
 
-HTML application
-* Create the application!
-* List source files, coverage % in a table?
-* Select source file, show source coverage
-* Collect snapshots of coverage
-* Compare before/after snapshots
+```
+./gradlew
+```
 
-Live updates
-* Subclass Jetty's WebSocketServlet and add it to WebServer
-* Detect changed classes and send push them as JSON to clients
-* Update client to listen for Websocket push, then merge class counts and the update view
+This will produce `build/libs/skybar-[version]-all.jar`. Use this jar as the argument to `-javaagent` in a `java` invocation. You'll also need to provide several system properties:
 
-Features:
-* Configure package prefix
-* Record and show time of last line visit
-* Create a Maven plugin for configuring -javaAgent for Maven ${argLine} for Surefire / unit tests / jetty:run-forked (Usability)
+- `skybar.includedPackage`: package prefix to instrument, slash-separated as in `com/foo/bar/baz`. 
+- `skybar.serverPort`: port for web ui, defaults to `4321`.
+- `skybar.source.path`: filesystem path to source
 
-Advanced:
-* Use InvokeDynamic to reduce lookup time for LongAdder (Performance)
-* Attach to a live process and retransform already loaded classes (Attach API)
-* Support multiple class loaders
+Here's an example invocation using the skybar demo app:
+
+```
+java \
+  -Dskybar.includedPackage=com/skybar/demo \
+  -Dskybar.serverPort=4321 \
+  -Dskybar.source.path=../skybar-demo/src/main/java \
+  -javaagent:path/to/skybar-1.0-SNAPSHOT-all.jar \
+  -jar ../skybar-demo/target/skybar-demo-1.0-SNAPSHOT-jetty-console.war --headless
+```
+
+To use both the debugger together with skybar, you can include an `-agentlib` line as well, like:
+
+```
+java \
+  -agentlib:jdwp=transport=dt_socket,address=localhost:9009,server=y,suspend=y \
+  -javaagent:build/libs/skybar-1.0-SNAPSHOT-all.jar \
+  ...
+```
+
+Once that's running, connect to [http://localhost:4321](http://localhost:4321) (change the port as needed if you're not using the default) and use your app. You should see live updates to the number of times each line of code is executed.

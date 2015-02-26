@@ -15,7 +15,7 @@ public class RegistryUpdateListeners extends Thread implements Listener {
     public static final long INITIAL_DELAY = 200L;
     public static final long PULSE_PERIOD = 200L;
     private final SkybarRegistry registry;
-    private final Map<String,Map<Integer,Long>> tempMap;
+    private final Map<String, Map<Integer, Long>> tempMap;
 
     public RegistryUpdateListeners(SkybarRegistry registry) {
         super("RegistryUpdateListeners");

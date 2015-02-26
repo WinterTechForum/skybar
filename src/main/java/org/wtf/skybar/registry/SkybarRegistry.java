@@ -7,7 +7,6 @@ import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.atomic.LongAdder;
-import java.util.function.BiConsumer;
 import java.util.function.BiFunction;
 import java.util.function.Consumer;
 import javax.annotation.concurrent.GuardedBy;
@@ -53,19 +52,16 @@ public class SkybarRegistry {
     public void visitLine(long index) {
         long l = phaser.writerCriticalSectionEnter();
         try {
-            activeCounts.compute(index, new BiFunction<Long, LongAdder, LongAdder>() {
-                @Override
-                public LongAdder apply(Long count, LongAdder adder) {
-                    if (adder == null) {
-                        LongAdder longAdder = new LongAdder();
-                        longAdder.increment();
-                        return longAdder;
-                    }
-
-                    adder.increment();
-
-                    return adder;
+            activeCounts.compute(index, (count, adder) -> {
+                if (adder == null) {
+                    LongAdder longAdder = new LongAdder();
+                    longAdder.increment();
+                    return longAdder;
                 }
+
+                adder.increment();
+
+                return adder;
             });
         } finally {
             phaser.writerCriticalSectionExit(l);
@@ -97,31 +93,23 @@ public class SkybarRegistry {
      * @param deltaBuffer map to use to write delta into
      */
     public void updateListeners(Map<String, Map<Integer, Long>> deltaBuffer) {
-        deltaBuffer.forEach(new BiConsumer<String, Map<Integer, Long>>() {
-            @Override
-            public void accept(String s, Map<Integer, Long> counts) {
-                counts.clear();
-            }
-        });
+        deltaBuffer.forEach((s, counts) -> counts.clear());
 
         synchronized (this) {
             flipPhase();
 
-            inactiveCounts.forEach(new BiConsumer<Long, LongAdder>() {
-                @Override
-                public void accept(Long index, LongAdder adder) {
+            inactiveCounts.forEach((index, adder) -> {
 
-                /*
-                 this is accessed outside the registry's phaser read lock, but all keys we will access here for the
-                 delta must already have been added at registration time
-                */
-                    SourceLocation location = indexToSourceLoc.get(index);
+            /*
+             this is accessed outside the registry's phaser read lock, but all keys we will access here for the
+             delta must already have been added at registration time
+            */
+                SourceLocation location = indexToSourceLoc.get(index);
 
-                    BiFunction<String, Map<Integer, Long>, Map<Integer, Long>> mapUpdater =
-                            new MapUpdater(location.lineNum, adder);
-                    deltaBuffer.compute(location.source, mapUpdater);
-                    accumulatedCounts.compute(location.source, mapUpdater);
-                }
+                BiFunction<String, Map<Integer, Long>, Map<Integer, Long>> mapUpdater
+                        = getMapUpdater(location.lineNum, adder);
+                deltaBuffer.compute(location.source, mapUpdater);
+                accumulatedCounts.compute(location.source, mapUpdater);
             });
 
             listenersCopy.clear();
@@ -129,12 +117,7 @@ public class SkybarRegistry {
         }
 
         // Invoke the listeners outside the lock because we don't need to hold it any more
-        listenersCopy.forEach(new Consumer<DeltaListener>() {
-            @Override
-            public void accept(DeltaListener l) {
-                l.accept(deltaBuffer);
-            }
-        });
+        listenersCopy.forEach(l -> l.accept(deltaBuffer));
     }
 
     /**
@@ -149,17 +132,36 @@ public class SkybarRegistry {
 
         // deep copy
         HashMap<String, Map<Integer, Long>> copy = new HashMap<>();
-        accumulatedCounts.forEach(new BiConsumer<String, Map<Integer, Long>>() {
-            @Override
-            public void accept(String source, Map<Integer, Long> counts) {
-                copy.put(source, new HashMap<>(counts));
-            }
-        });
+        accumulatedCounts.forEach((source, counts) -> copy.put(source, new HashMap<>(counts)));
         return copy;
     }
 
     public synchronized void unregisterListener(DeltaListener listener) {
         listeners.remove(listener);
+    }
+
+    static BiFunction<String, Map<Integer, Long>, Map<Integer, Long>> getMapUpdater(int lineNum, LongAdder adder) {
+        return (source, counts) -> {
+            if (counts == null) {
+                // no count map; create a new map with just the one count set
+                HashMap<Integer, Long> newCounts = new HashMap<>();
+                newCounts.put(lineNum, adder.longValue());
+                return newCounts;
+            }
+
+            // update count in existing counts map
+            counts.compute(lineNum, (line, count) -> {
+                if (count == null) {
+                    // no count yet, use adder value
+                    return adder.longValue();
+                }
+
+                // already a count, add on the adder value
+                return count + adder.longValue();
+            });
+
+            return counts;
+        };
     }
 
     /**
@@ -183,12 +185,7 @@ public class SkybarRegistry {
     }
 
     private static void clearAdders(ConcurrentHashMap<Long, LongAdder> counts) {
-        counts.forEachValue(1, new Consumer<LongAdder>() {
-            @Override
-            public void accept(LongAdder longAdder) {
-                longAdder.reset();
-            }
-        });
+        counts.forEachValue(1, LongAdder::reset);
     }
 
     private static class SourceLocation {
@@ -207,40 +204,4 @@ public class SkybarRegistry {
      */
     @FunctionalInterface
     public interface DeltaListener extends Consumer<Map<String, Map<Integer, Long>>> {}
-
-    static class MapUpdater implements BiFunction<String, Map<Integer, Long>, Map<Integer, Long>> {
-        private final LongAdder adder;
-        private int lineNum;
-
-        public MapUpdater(int lineNum, LongAdder adder) {
-            this.adder = adder;
-            this.lineNum = lineNum;
-        }
-
-        @Override
-        public Map<Integer, Long> apply(String source, Map<Integer, Long> counts) {
-            if (counts == null) {
-                // no count map; create a new map with just the one count set
-                HashMap<Integer, Long> newCounts = new HashMap<>();
-                newCounts.put(lineNum, adder.longValue());
-                return newCounts;
-            }
-
-            // update count in existing counts map
-            counts.compute(lineNum, new BiFunction<Integer, Long, Long>() {
-                @Override
-                public Long apply(Integer line, Long count) {
-                    if (count == null) {
-                        // no count yet, use adder value
-                        return adder.longValue();
-                    }
-
-                    // already a count, add on the adder value
-                    return count + adder.longValue();
-                }
-            });
-
-            return counts;
-        }
-    }
 }

@@ -24,6 +24,7 @@ import org.junit.Test;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
+import static org.wtf.skybar.registry.SkybarRegistry.getMapUpdater;
 
 public class SkybarRegistryTest {
 
@@ -166,7 +167,7 @@ public class SkybarRegistryTest {
     public void testMapUpdaterAddsWhenSourceNotAlreadyPresent() {
         Map<String, Map<Integer, Long>> map = new HashMap<>();
 
-        map.compute("foo", new SkybarRegistry.MapUpdater(1, new LongAdder()));
+        map.compute("foo", getMapUpdater(1, new LongAdder()));
 
         assertSnapshotCount(map, "foo", 1, 1, 0);
     }
@@ -178,7 +179,7 @@ public class SkybarRegistryTest {
 
         LongAdder adder = new LongAdder();
         adder.increment();
-        map.compute("foo", new SkybarRegistry.MapUpdater(1, adder));
+        map.compute("foo", getMapUpdater(1, adder));
 
         assertSnapshotCount(map, "foo", 1, 1, 1);
     }
@@ -192,7 +193,7 @@ public class SkybarRegistryTest {
 
         LongAdder adder = new LongAdder();
         adder.increment();
-        map.compute("foo", new SkybarRegistry.MapUpdater(1, adder));
+        map.compute("foo", getMapUpdater(1, adder));
 
         assertSnapshotCount(map, "foo", 1, 1, 5);
     }
