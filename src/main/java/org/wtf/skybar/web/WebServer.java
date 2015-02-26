@@ -23,10 +23,11 @@ import org.wtf.skybar.time.RegistryUpdateListeners;
 public class WebServer {
     public static final String SOURCE_PATH_SYS_PROPERTY = "skybar.source.path";
     public static final String SOURCE_PATH_ENV_VAR_NAME = "SKYBAR_SOURCE_PATH";
+    private Server server;
 
     public void start(int port) {
         try {
-            Server server = new Server();
+            server = new Server();
             ServerConnector connector = new ServerConnector(server);
             connector.setPort(port);
             server.addConnector(connector);
@@ -99,5 +100,13 @@ public class WebServer {
                 .forEach(url -> bases.add(Resource.newResource(url)));
 
         return new ResourceCollection(bases.toArray(new Resource[bases.size()]));
+    }
+
+    public void stop() {
+        try {
+            server.stop();
+        } catch (Exception e) {
+            throw new RuntimeException(e);
+        }
     }
 }

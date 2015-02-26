@@ -1,10 +1,13 @@
 package org.wtf.skybar.registry;
 
 import java.net.URI;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Random;
 import java.util.SplittableRandom;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
 import java.util.concurrent.atomic.AtomicInteger;
 import org.eclipse.jetty.websocket.api.Session;
 import org.eclipse.jetty.websocket.api.annotations.OnWebSocketClose;
@@ -32,7 +35,8 @@ public final class SkybarStressTool {
 
     public void go(int durationSecs) throws Exception {
 
-        new WebServer().start(12000);
+        WebServer webServer = new WebServer();
+        webServer.start(12000);
 
         long seed = new Random().nextLong();
         System.out.println("Seed: " + seed);
@@ -50,8 +54,10 @@ public final class SkybarStressTool {
 
         AtomicInteger numFutures = new AtomicInteger();
 
+        List<Future<?>> futures = new ArrayList<>();
+
         for (int thread = 0; thread < numVisitThreads; thread++) {
-            ex.submit(() -> {
+            futures.add(ex.submit(() -> {
                 numFutures.incrementAndGet();
                 SplittableRandom visitRand = rand.split();
                 while (true) {
@@ -64,18 +70,26 @@ public final class SkybarStressTool {
                         return;
                     }
                 }
-            });
+            }));
         }
 
         WebSocketClient client = new WebSocketClient();
         client.start();
-        client.connect(new SimpleEchoSocket(),
+        futures.add(client.connect(new SimpleEchoSocket(),
                 new URI("ws://localhost:12000/livecoverage/"),
-                new ClientUpgradeRequest());
+                new ClientUpgradeRequest()));
 
         Thread.sleep(durationSecs * 1000);
 
         ex.shutdownNow();
+
+        client.stop();
+
+        webServer.stop();
+
+        for (Future<?> future : futures) {
+            future.get();
+        }
     }
 
     @WebSocket(maxTextMessageSize = 64 * 1024)
