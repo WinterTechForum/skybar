@@ -1,6 +1,8 @@
 # skybar
 Skybar: Live code coverage engine
 
+Skybar shows you a web UI of your java code with live-updating per-line execution counts.
+
 ![Skybar](https://raw.githubusercontent.com/WinterTechForum/skybar/master/skybar.jpg)
 
 For a convenient toy app to try it out with, see [Skybar Demo](https://github.com/WinterTechForum/skybar-demo).
