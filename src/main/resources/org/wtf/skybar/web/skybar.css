@@ -1,13 +1,14 @@
 .linenum, .numVisits {
     font-family: monospace;
-    width: 2em;
     text-align: right;
     padding: 0.3em;
 }
 .linenum {
     color: gray;
 }
-
+.numVisits {
+    min-width: 2em;
+}
 .covered {
     background-color: #80ff80;
 }
