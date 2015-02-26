@@ -1,6 +1,8 @@
 # skybar
 Skybar: Live code coverage engine
 
+![Skybar](https://raw.githubusercontent.com/WinterTechForum/skybar/master/skybar.jpg)
+
 Byte code transformation:
 * Learn byte code (HelloWorldByteCode)
 * Learn ASM code (HelloWorldAsm)
