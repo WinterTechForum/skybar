@@ -44,6 +44,6 @@ public class SkybarTransformer implements ClassFileTransformer {
             return false; // Can't instrument with no byte code
         }
         // Ok, do we match our prefix?
-        return className.startsWith(prefix);
+        return className.startsWith(prefix) && !className.contains("$$");
     }
 }
