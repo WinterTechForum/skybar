@@ -86,7 +86,6 @@ public class SkybarRegistry {
         try {
             index = nextIndex.incrementAndGet();
             indexToSourceLoc.put(index, new SourceLocation(sourceName, lineNumber));
-            activeCounts.put(index, new LongAdder());
         } finally {
             phaser.writerCriticalSectionExit(l);
         }
@@ -100,7 +99,7 @@ public class SkybarRegistry {
     public void updateListeners(Map<String, Map<Integer, Long>> deltaBuffer) {
         deltaBuffer.forEach(new BiConsumer<String, Map<Integer, Long>>() {
             @Override
-            public void accept(String source, Map<Integer, Long> counts) {
+            public void accept(String s, Map<Integer, Long> counts) {
                 counts.clear();
             }
         });
@@ -118,33 +117,8 @@ public class SkybarRegistry {
                 */
                     SourceLocation location = indexToSourceLoc.get(index);
 
-                    BiFunction<String, Map<Integer, Long>, Map<Integer, Long>> mapUpdater = new BiFunction<String, Map<Integer, Long>, Map<Integer, Long>>() {
-                        @Override
-                        public Map<Integer, Long> apply(String source, Map<Integer, Long> counts) {
-                            if (counts == null) {
-                                // no count map; create a new map with just the one count set
-                                HashMap<Integer, Long> newCounts = new HashMap<>();
-                                newCounts.put(location.lineNum, adder.longValue());
-                                return newCounts;
-                            }
-
-                            // update count in existing counts map
-                            counts.compute(location.lineNum, new BiFunction<Integer, Long, Long>() {
-                                @Override
-                                public Long apply(Integer line, Long count) {
-                                    if (count == null) {
-                                        // no count yet, use adder value
-                                        return adder.longValue();
-                                    }
-
-                                    // already a count, add on the adder value
-                                    return count + adder.longValue();
-                                }
-                            });
-
-                            return counts;
-                        }
-                    };
+                    BiFunction<String, Map<Integer, Long>, Map<Integer, Long>> mapUpdater =
+                            new MapUpdater(location.lineNum, adder);
                     deltaBuffer.compute(location.source, mapUpdater);
                     accumulatedCounts.compute(location.source, mapUpdater);
                 }
@@ -227,6 +201,46 @@ public class SkybarRegistry {
         }
     }
 
+    /**
+     * Implementations should not hold on to the map that's passed in. It will be re-used, so copy data out of it if you
+     * need to keep the contents.
+     */
     @FunctionalInterface
     public interface DeltaListener extends Consumer<Map<String, Map<Integer, Long>>> {}
+
+    static class MapUpdater implements BiFunction<String, Map<Integer, Long>, Map<Integer, Long>> {
+        private final LongAdder adder;
+        private int lineNum;
+
+        public MapUpdater(int lineNum, LongAdder adder) {
+            this.adder = adder;
+            this.lineNum = lineNum;
+        }
+
+        @Override
+        public Map<Integer, Long> apply(String source, Map<Integer, Long> counts) {
+            if (counts == null) {
+                // no count map; create a new map with just the one count set
+                HashMap<Integer, Long> newCounts = new HashMap<>();
+                newCounts.put(lineNum, adder.longValue());
+                return newCounts;
+            }
+
+            // update count in existing counts map
+            counts.compute(lineNum, new BiFunction<Integer, Long, Long>() {
+                @Override
+                public Long apply(Integer line, Long count) {
+                    if (count == null) {
+                        // no count yet, use adder value
+                        return adder.longValue();
+                    }
+
+                    // already a count, add on the adder value
+                    return count + adder.longValue();
+                }
+            });
+
+            return counts;
+        }
+    }
 }
