@@ -106,8 +106,8 @@ public class SkybarRegistry {
             */
                 SourceLocation location = indexToSourceLoc.get(index);
 
-                BiFunction<String, Map<Integer, Long>, Map<Integer, Long>> mapUpdater =
-                        new MapUpdater(location.lineNum, adder);
+                BiFunction<String, Map<Integer, Long>, Map<Integer, Long>> mapUpdater
+                        = getMapUpdater(location.lineNum, adder);
                 deltaBuffer.compute(location.source, mapUpdater);
                 accumulatedCounts.compute(location.source, mapUpdater);
             });
@@ -138,6 +138,30 @@ public class SkybarRegistry {
 
     public synchronized void unregisterListener(DeltaListener listener) {
         listeners.remove(listener);
+    }
+
+    static BiFunction<String, Map<Integer, Long>, Map<Integer, Long>> getMapUpdater(int lineNum, LongAdder adder) {
+        return (source, counts) -> {
+            if (counts == null) {
+                // no count map; create a new map with just the one count set
+                HashMap<Integer, Long> newCounts = new HashMap<>();
+                newCounts.put(lineNum, adder.longValue());
+                return newCounts;
+            }
+
+            // update count in existing counts map
+            counts.compute(lineNum, (line, count) -> {
+                if (count == null) {
+                    // no count yet, use adder value
+                    return adder.longValue();
+                }
+
+                // already a count, add on the adder value
+                return count + adder.longValue();
+            });
+
+            return counts;
+        };
     }
 
     /**
@@ -180,37 +204,4 @@ public class SkybarRegistry {
      */
     @FunctionalInterface
     public interface DeltaListener extends Consumer<Map<String, Map<Integer, Long>>> {}
-
-    static class MapUpdater implements BiFunction<String, Map<Integer, Long>, Map<Integer, Long>> {
-        private final LongAdder adder;
-        private int lineNum;
-
-        public MapUpdater(int lineNum, LongAdder adder) {
-            this.adder = adder;
-            this.lineNum = lineNum;
-        }
-
-        @Override
-        public Map<Integer, Long> apply(String source, Map<Integer, Long> counts) {
-            if (counts == null) {
-                // no count map; create a new map with just the one count set
-                HashMap<Integer, Long> newCounts = new HashMap<>();
-                newCounts.put(lineNum, adder.longValue());
-                return newCounts;
-            }
-
-            // update count in existing counts map
-            counts.compute(lineNum, (line, count) -> {
-                if (count == null) {
-                    // no count yet, use adder value
-                    return adder.longValue();
-                }
-
-                // already a count, add on the adder value
-                return count + adder.longValue();
-            });
-
-            return counts;
-        }
-    }
 }

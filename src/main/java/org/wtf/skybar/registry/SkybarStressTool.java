@@ -13,22 +13,24 @@ import org.eclipse.jetty.websocket.api.annotations.OnWebSocketMessage;
 import org.eclipse.jetty.websocket.api.annotations.WebSocket;
 import org.eclipse.jetty.websocket.client.ClientUpgradeRequest;
 import org.eclipse.jetty.websocket.client.WebSocketClient;
-import org.junit.After;
-import org.junit.Test;
 import org.wtf.skybar.web.WebServer;
 
-public final class SkybarStressTest {
+public final class SkybarStressTool {
     private SkybarRegistry r = SkybarRegistry.registry;
 
     private ExecutorService ex = Executors.newCachedThreadPool();
 
-    @After
-    public void tearDown() throws Exception {
-        ex.shutdownNow();
+    public static void main(String[] args) throws Exception {
+
+        int numSeconds = 60;
+        if (args.length == 1) {
+            numSeconds = Integer.parseInt(args[0]);
+        }
+
+        new SkybarStressTool().go(numSeconds);
     }
 
-    @Test
-    public void testStressEntireSystem() throws Exception {
+    public void go(int durationSecs) throws Exception {
 
         new WebServer().start(12000);
 
@@ -71,7 +73,7 @@ public final class SkybarStressTest {
                 new URI("ws://localhost:12000/livecoverage/"),
                 new ClientUpgradeRequest());
 
-        Thread.sleep(5 * 60 * 1000);
+        Thread.sleep(durationSecs * 1000);
 
         ex.shutdownNow();
     }
