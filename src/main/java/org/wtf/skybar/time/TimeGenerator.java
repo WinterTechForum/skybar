@@ -8,8 +8,8 @@ import java.util.TimerTask;
  * Send a message to all listeners every second.
  */
 public class TimeGenerator {
-    public static final long INITIAL_DELAY = 1000L;
-    public static final long PULSE_PERIOD = 1000L;
+    public static final long INITIAL_DELAY = 200L;
+    public static final long PULSE_PERIOD = 200L;
     private static final TimeGenerator instance;
     static {
         instance = new TimeGenerator();

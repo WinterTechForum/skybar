@@ -1,8 +1,6 @@
 package org.wtf.skybar.web;
 
 import java.util.Map;
-import java.util.function.Predicate;
-import java.util.stream.Collectors;
 import org.eclipse.jetty.util.ajax.JSON;
 import org.eclipse.jetty.util.log.Log;
 import org.eclipse.jetty.util.log.Logger;
@@ -64,13 +62,34 @@ public class CoverageWebSocket implements WebSocketListener, DeltaListener {
      * @param snapshot snapshot coverage count.
      */
     private void sendSnapshot(Map<String,Map<Integer,Long>> snapshot) {
-        Map<String,Map<Integer,Long>> filtered = snapshot
-                .entrySet()
-                .stream()
-                .filter(p -> hasCounts(p.getValue()))
-                .collect(Collectors.toMap(p -> p.getKey(), p -> p.getValue()));
+        Map<String,Map<Integer,Long>> filtered = filterSnap(snapshot);
         String json = JSON.toString(filtered);
         outbound.getRemote().sendStringByFuture(json);
+    }
+
+    private static Map<String,Map<Integer,Long>> filterSnap(Map<String,Map<Integer,Long>> orig) {
+        Map<String,Map<Integer,Long>> res = new java.util.LinkedHashMap<>();
+        Map<Integer,Long> counts;
+        for (Map.Entry<String,Map<Integer,Long>> ent: orig.entrySet()) {
+            counts = filterCounts(ent.getValue());
+            if (counts != null && counts.size() > 0) {
+                res.put(ent.getKey(), counts);
+            }
+        }
+        return res;
+    }
+
+    private static Map<Integer,Long> filterCounts(Map<Integer,Long> orig) {
+        if (orig == null || orig.isEmpty()) {
+            return null;
+        }
+        Map<Integer,Long> res = new java.util.LinkedHashMap<>();
+        for (Map.Entry<Integer,Long> ent: orig.entrySet()) {
+            if (ent.getValue() > 0L) {
+                res.put(ent.getKey(), ent.getValue());
+            }
+        }
+        return res;
     }
 
     /**
