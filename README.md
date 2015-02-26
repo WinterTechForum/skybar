@@ -1,3 +1,4 @@
+[![Build Status](https://semaphoreapp.com/api/v1/projects/c5cdee73-a0d4-47a6-a7f3-2b13a32969fb/360557/badge.png)](https://semaphoreapp.com/marshallpierce/skybar)
 # skybar
 Skybar: Live code coverage engine
 
