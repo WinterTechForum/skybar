@@ -23,10 +23,10 @@
     <td>
 
     <table >
-        <tr ng-repeat="line in sourceLines track by $index"
-                ng-class="{covered: (getExecCount(coverage, currentSourceFile, $index+1) > 0), uncovered: (getExecCount(coverage, currentSourceFile, $index+1) === 0)}">
-            <td class="linenum">{{$index+1}}</td>
-            <td class="numVisits"><pre>{{getExecCount(coverage, currentSourceFile, $index+1)}}</pre></td>
+        <tr ng-repeat="line in currentSourceLines track by $index"
+                ng-class="{covered: (line.executable && line.covered), uncovered: (line.executable && !line.covered)}">
+            <td class="linenum">{{line.number}}</td>
+            <td class="numVisits"><pre>{{line.execCount}}</pre></td>
             <td class="line"><pre>{{line.text}}</pre></td>
         </tr>
     </table>

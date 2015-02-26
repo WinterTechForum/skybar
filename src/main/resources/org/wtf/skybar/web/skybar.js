@@ -1,5 +1,21 @@
-function openWebSocket($scope)
-{
+function onCoverageUpdate($scope) {
+  if (typeof $scope.currentSourceFile === "string") {
+    var currentSourceFileCoverage = $scope.coverage[$scope.currentSourceFile];
+    for (var i = 0; i < $scope.currentSourceLines.length; i++) {
+      var sourceLine = $scope.currentSourceLines[i];
+      var execCount = currentSourceFileCoverage[sourceLine.number];
+      if (typeof execCount === "number") {
+        sourceLine.executable = true;
+        sourceLine.covered = execCount > 0;
+        sourceLine.execCount = execCount;
+      } else {
+        sourceLine.executable = false;
+      }
+    }
+  }
+};
+
+function openWebSocket($scope) {
   var host = location.host;
   var wsUri = "ws://" + host + "/livecoverage/";
   var websocket = new WebSocket(wsUri);
@@ -34,13 +50,14 @@ function openWebSocket($scope)
          }
       }
     }
+    onCoverageUpdate($scope);
     $scope.$digest();
   };
   websocket.onerror = function (evt) {
-    $window.alert("onError event")
+    console.log("onError Event")
   };
 
-}
+};
 
 angular.module('skybar', [])
     .controller('SkybarController', ['$scope', '$interval', '$http', function ($scope, $interval, $http) {
@@ -61,20 +78,16 @@ angular.module('skybar', [])
             '/source/' + sourceFile
         ).success(function (data) {
 
-              var sourceLines = data.split("\n")
-              $scope.sourceLines = []
+              var sourceLineTexts = data.split("\n")
+              $scope.currentSourceLines = []
 
-              for (var lineNum in sourceLines) {
-
-                  var lineNumKey = (lineNum - 0 + 1).toString();
-                  var execCount = $scope.coverage[sourceFile][lineNumKey] || 0
-
-                  console.log("execCount for " + lineNumKey + " = " + execCount)
-
-
-                  $scope.sourceLines.push({ "text": sourceLines[lineNum], "execCount": execCount })
+              for (var i = 0; i < sourceLineTexts.length; i++) {
+                  $scope.currentSourceLines.push(
+                    { "text": sourceLineTexts[i], "number": (i + 1).toString() }
+                  )
               }
-              $scope.currentSourceFile = sourceFile
+              onCoverageUpdate($scope);
+              $scope.currentSourceFile = sourceFile;
 
               console.log($scope.sourceLines)
           }).error(function (data, status) {
