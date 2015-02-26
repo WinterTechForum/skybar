@@ -11,11 +11,17 @@ Run skybar-demo:
 
 cd skybar
 
-# Set the location of the source to search
-export SKYBAR_SOURCE_PATH=../skybar-demo/src/main/java:src/main/java
-
-# Start with skybar agent
-java -javaagent:build/libs/skybar-1.0-SNAPSHOT-all.jar -Dskybar.includedPackage="com/skybar" -Dskybar.serverPort="4321" -jar ../skybar-demo/target/skybar-demo-1.0-SNAPSHOT-jetty-console.war --headless
+# Start with skybar agent.  Set system properties to configure skybar
+java -javaagent:build/libs/skybar-1.0-SNAPSHOT-all.jar \
+  -Dskybar.includedPackage="com/skybar" \
+  -Dskybar.serverPort="4321" \
+  -Dskybar.source.path="../skybar-demo/src/main/java" \
+  -jar ../skybar-demo/target/skybar-demo-1.0-SNAPSHOT-jetty-console.war --headless
 
 # Or start with both debugger and skybar agent enabled, then attach your debugger to port 9009
-java -agentlib:jdwp=transport=dt_socket,address=localhost:9009,server=y,suspend=y -javaagent:build/libs/skybar-1.0-SNAPSHOT-all.jar -jar ../skybar-demo/target/skybar-demo-1.0-SNAPSHOT-jetty-console.war --headless
+java -agentlib:jdwp=transport=dt_socket,address=localhost:9009,server=y,suspend=y \
+  -javaagent:build/libs/skybar-1.0-SNAPSHOT-all.jar \
+  -Dskybar.includedPackage="com/skybar" \
+  -Dskybar.serverPort="4321" \
+  -Dskybar.source.path="../skybar-demo/src/main/java" \
+  -jar ../skybar-demo/target/skybar-demo-1.0-SNAPSHOT-jetty-console.war --headless

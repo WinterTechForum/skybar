@@ -31,7 +31,7 @@ public class CoverageWebSocket implements WebSocketListener, DeltaListener {
     public void onWebSocketConnect(Session session) {
         this.outbound = session;
         Map<String,Map<Integer,Long>> snapshot = SkybarRegistry.registry.getCurrentSnapshot(this);
-        sendSnapshot(snapshot);
+        sendSnapshot(snapshot, false);
     }
  
     @Override
@@ -54,15 +54,18 @@ public class CoverageWebSocket implements WebSocketListener, DeltaListener {
      */
     @Override
     public void accept(Map<String, Map<Integer, Long>> diffSnapshot) {
-        sendSnapshot(diffSnapshot);
+        sendSnapshot(diffSnapshot, true);
     }
 
     /**
      * Send snapshot to this client.  Will send an empty map {} if nothing new happened.
      * @param snapshot snapshot coverage count.
      */
-    private void sendSnapshot(Map<String,Map<Integer,Long>> snapshot) {
-        Map<String,Map<Integer,Long>> filtered = filterSnap(snapshot);
+    private void sendSnapshot(Map<String,Map<Integer,Long>> snapshot, boolean doFilter) {
+        Map<String,Map<Integer,Long>> filtered = snapshot;
+        if (doFilter) {
+            filtered = filterSnap(snapshot);
+        }
         String json = JSON.toString(filtered);
         outbound.getRemote().sendStringByFuture(json);
     }
