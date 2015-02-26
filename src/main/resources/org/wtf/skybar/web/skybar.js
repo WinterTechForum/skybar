@@ -1,6 +1,54 @@
+function openWebSocket($scope)
+{
+  var host = location.host;
+  var wsUri = "ws://" + host + "/livecoverage/";
+  var websocket = new WebSocket(wsUri);
+
+  websocket.onopen = function (evt) {
+    console.log("onOpen Event")
+  };
+  websocket.onclose = function (evt) {
+    console.log("onClose Event")
+  };
+  websocket.onmessage = function (evt) {
+    var parsed = JSON.parse(evt.data);
+    if(typeof $scope.coverage === "undefined") {
+      console.log("got initial coverage: "+evt.data)
+      $scope.coverage = parsed
+    }
+    else{
+      console.log("got incremental update: "+evt.data)
+      for(var sourceFile in parsed)
+      {
+         var newFileLines = parsed[sourceFile]
+         var oldFileLines = $scope.coverage[sourceFile] || { sourceFile: {}}
+         // make sure the object is stored in scope
+         $scope.coverage[sourceFile] = oldFileLines
+         for(var lineNum in newFileLines)
+         {
+            var increment = newFileLines[lineNum]
+            var oldExecCount = oldFileLines[lineNum] || 0
+
+            oldFileLines[lineNum] = oldExecCount + increment
+
+         }
+      }
+    }
+    $scope.$digest();
+  };
+  websocket.onerror = function (evt) {
+    $window.alert("onError event")
+  };
+
+}
+
 angular.module('skybar', [])
     .controller('SkybarController', ['$scope', '$interval', '$http', '$window', function ($scope, $interval, $http, $window) {
-        $scope.sourceFiles = function () {
+
+
+    openWebSocket($scope)
+
+    $scope.sourceFiles = function () {
             var sourceFiles = [];
             for (var sourceFile in $scope.coverage) {
                 sourceFiles.push(sourceFile);
@@ -44,42 +92,5 @@ angular.module('skybar', [])
             var sourceFileCoverage = coverage[sourceFile]
             return sourceFileCoverage[lineNumber.toString()]
         }
-        function updateCoverage() {
-            $http.get(
-                '/coverage.json'
-            ).success(function (data) {
-                    //console.log("data: " + JSON.stringify(data));
-                    $scope.coverage = data
-                }).error(function (data, status) {
-                    console.log("error loading coverage data:");
-                    console.log("status: " + status);
-                    console.log("data: " + data);
-                    $window.alert("Error loading coverage data.")
-                })
-        }
-
-        updateCoverage();
-        $interval(updateCoverage, 2000);
-
-
-    }]).controller('WebSocketController', ['$scope', '$window', function ($scope, $window) {
-        var host = location.host;
-        var wsUri = "ws://" + host + "/time/";
-        var websocket = new WebSocket(wsUri);
-
-        websocket.onopen = function (evt) {
-            console.log("onOpen Event")
-        };
-        websocket.onclose = function (evt) {
-            console.log("onClose Event")
-        };
-        websocket.onmessage = function (evt) {
-            var parsed = JSON.parse(evt.data);
-            $scope.time = parsed.time;
-            $scope.$digest();
-        };
-        websocket.onerror = function (evt) {
-            $window.alert("onError event")
-        };
 
     }]);
