@@ -1,7 +1,9 @@
 package org.wtf.skybar.web;
 
-import java.util.LinkedHashMap;
+import java.util.HashMap;
 import java.util.Map;
+import net.openhft.koloboke.collect.map.IntLongMap;
+import net.openhft.koloboke.collect.map.hash.HashIntLongMaps;
 import org.eclipse.jetty.util.ajax.JSON;
 import org.eclipse.jetty.util.log.Log;
 import org.eclipse.jetty.util.log.Logger;
@@ -31,7 +33,7 @@ public class CoverageWebSocket implements WebSocketListener, DeltaListener {
     @Override
     public void onWebSocketConnect(Session session) {
         this.outbound = session;
-        Map<String, Map<Integer, Long>> snapshot = SkybarRegistry.registry.getCurrentSnapshot(this);
+        Map<String, IntLongMap> snapshot = SkybarRegistry.registry.getCurrentSnapshot(this);
         sendSnapshot(snapshot);
     }
 
@@ -54,7 +56,7 @@ public class CoverageWebSocket implements WebSocketListener, DeltaListener {
      * @param diffSnapshot differential snapshot
      */
     @Override
-    public void accept(Map<String, Map<Integer, Long>> diffSnapshot) {
+    public void accept(Map<String, IntLongMap> diffSnapshot) {
         sendSnapshot(diffSnapshot);
     }
 
@@ -63,18 +65,18 @@ public class CoverageWebSocket implements WebSocketListener, DeltaListener {
      *
      * @param snapshot snapshot coverage count.
      */
-    private void sendSnapshot(Map<String, Map<Integer, Long>> snapshot) {
+    private void sendSnapshot(Map<String, IntLongMap> snapshot) {
         outbound.getRemote().sendStringByFuture(toJson(snapshot));
     }
 
-    static String toJson(Map<String, Map<Integer, Long>> data) {
+    static String toJson(Map<String, IntLongMap> data) {
         return JSON.toString(filterSnap(data));
     }
 
-    private static Map<String, Map<Integer, Long>> filterSnap(Map<String, Map<Integer, Long>> orig) {
-        Map<String, Map<Integer, Long>> res = new LinkedHashMap<>();
-        Map<Integer, Long> counts;
-        for (Map.Entry<String, Map<Integer, Long>> ent : orig.entrySet()) {
+    private static Map<String, IntLongMap> filterSnap(Map<String, IntLongMap> orig) {
+        Map<String, IntLongMap> res = new HashMap<>();
+        IntLongMap counts;
+        for (Map.Entry<String, IntLongMap> ent : orig.entrySet()) {
             counts = filterCounts(ent.getValue());
             if (counts != null && counts.size() > 0) {
                 res.put(ent.getKey(), counts);
@@ -83,16 +85,16 @@ public class CoverageWebSocket implements WebSocketListener, DeltaListener {
         return res;
     }
 
-    private static Map<Integer, Long> filterCounts(Map<Integer, Long> orig) {
+    private static IntLongMap filterCounts(IntLongMap orig) {
         if (orig == null || orig.isEmpty()) {
             return null;
         }
-        Map<Integer, Long> res = new LinkedHashMap<>();
-        for (Map.Entry<Integer, Long> ent : orig.entrySet()) {
-            if (ent.getValue() > 0L) {
-                res.put(ent.getKey(), ent.getValue());
+        IntLongMap res = HashIntLongMaps.newMutableMap();
+        orig.forEach((int line, long count) -> {
+            if (count > 0) {
+                res.put(line, count);
             }
-        }
+        });
         return res;
     }
 }

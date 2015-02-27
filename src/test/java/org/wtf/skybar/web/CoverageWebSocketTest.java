@@ -1,9 +1,10 @@
 package org.wtf.skybar.web;
 
 import java.util.HashMap;
-import java.util.Map;
+import net.openhft.koloboke.collect.map.IntLongMap;
 import org.junit.Test;
 
+import static net.openhft.koloboke.collect.map.hash.HashIntLongMaps.newMutableMap;
 import static org.junit.Assert.assertEquals;
 import static org.wtf.skybar.web.CoverageWebSocket.toJson;
 
@@ -11,8 +12,8 @@ public class CoverageWebSocketTest {
 
     @Test
     public void testToJsonRemovesLinesWithZeroCountsAndSubsequentlyEmptySources() {
-        HashMap<String, Map<Integer, Long>> data = new HashMap<>();
-        HashMap<Integer, Long> counts = new HashMap<>();
+        HashMap<String, IntLongMap> data = new HashMap<>();
+        IntLongMap counts = newMutableMap();
         counts.put(2, 0L);
         data.put("foo", counts);
         assertEquals("{}", toJson(data));
@@ -20,8 +21,8 @@ public class CoverageWebSocketTest {
 
     @Test
     public void testToJsonRemovesLinesWithZeroCounts() {
-        HashMap<String, Map<Integer, Long>> data = new HashMap<>();
-        HashMap<Integer, Long> counts = new HashMap<>();
+        HashMap<String, IntLongMap> data = new HashMap<>();
+        IntLongMap counts = newMutableMap();
         counts.put(1, 2L);
         counts.put(2, 0L);
         data.put("foo", counts);
@@ -30,11 +31,11 @@ public class CoverageWebSocketTest {
 
     @Test
     public void testToJsonRemovesSourcesWithoutCounts() {
-        HashMap<String, Map<Integer, Long>> data = new HashMap<>();
-        HashMap<Integer, Long> counts = new HashMap<>();
+        HashMap<String, IntLongMap> data = new HashMap<>();
+        IntLongMap counts = newMutableMap();
         counts.put(1, 2L);
         data.put("foo", counts);
-        data.put("bar", new HashMap<>());
+        data.put("bar", newMutableMap());
         assertEquals("{\"foo\":{\"1\":2}}", toJson(data));
     }
 }

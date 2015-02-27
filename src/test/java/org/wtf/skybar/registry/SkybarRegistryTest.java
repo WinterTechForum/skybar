@@ -17,10 +17,12 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLongArray;
 import java.util.concurrent.atomic.LongAdder;
+import net.openhft.koloboke.collect.map.IntLongMap;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 
+import static net.openhft.koloboke.collect.map.hash.HashIntLongMaps.newMutableMap;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
@@ -48,7 +50,7 @@ public class SkybarRegistryTest {
         r.registerLine("foo", 33);
         r.updateListeners(new HashMap<>());
 
-        Map<String, Map<Integer, Long>> data = r.getCurrentSnapshot((delta) -> { });
+        Map<String, IntLongMap> data = r.getCurrentSnapshot((delta) -> { });
         assertTrue(data.isEmpty());
     }
 
@@ -97,7 +99,7 @@ public class SkybarRegistryTest {
         r.visitLine(index33);
         r.updateListeners(new HashMap<>());
 
-        HashMap<String, Map<Integer, Long>> data = new HashMap<>();
+        HashMap<String, IntLongMap> data = new HashMap<>();
 
         r.getCurrentSnapshot(data::putAll);
 
@@ -118,7 +120,7 @@ public class SkybarRegistryTest {
     public void testUnregisteredListenerDoesntGetUpdates() {
         long index33 = r.registerLine("foo", 33);
 
-        HashMap<String, Map<Integer, Long>> data = new HashMap<>();
+        HashMap<String, IntLongMap> data = new HashMap<>();
         SkybarRegistry.DeltaListener listener = data::putAll;
         r.getCurrentSnapshot(listener);
 
@@ -143,13 +145,13 @@ public class SkybarRegistryTest {
         long index33 = r.registerLine("foo", 33);
         long index44 = r.registerLine("foo", 44);
 
-        HashMap<String, Map<Integer, Long>> data = new HashMap<>();
+        HashMap<String, IntLongMap> data = new HashMap<>();
         // ignore return value; will be all zeroes
         r.getCurrentSnapshot(data::putAll);
 
         r.visitLine(index33);
 
-        HashMap<String, Map<Integer, Long>> buffer = new HashMap<>();
+        HashMap<String, IntLongMap> buffer = new HashMap<>();
         r.updateListeners(buffer);
         assertSnapshotCount(data, "foo", 1, 33, 1);
 
@@ -165,7 +167,7 @@ public class SkybarRegistryTest {
 
     @Test
     public void testMapUpdaterAddsWhenSourceNotAlreadyPresent() {
-        Map<String, Map<Integer, Long>> map = new HashMap<>();
+        Map<String, IntLongMap> map = new HashMap<>();
 
         map.compute("foo", getMapUpdater(1, new LongAdder()));
 
@@ -174,8 +176,8 @@ public class SkybarRegistryTest {
 
     @Test
     public void testMapUpdaterAddsNonZeroCountWhenSourceAlreadyPresent() {
-        Map<String, Map<Integer, Long>> map = new HashMap<>();
-        map.put("foo", new HashMap<>());
+        Map<String, IntLongMap> map = new HashMap<>();
+        map.put("foo", newMutableMap());
 
         LongAdder adder = new LongAdder();
         adder.increment();
@@ -186,8 +188,8 @@ public class SkybarRegistryTest {
 
     @Test
     public void testMapUpdaterAddsWhenSourceAndCountAlreadyPresent() {
-        Map<String, Map<Integer, Long>> map = new HashMap<>();
-        HashMap<Integer, Long> origCounts = new HashMap<>();
+        Map<String, IntLongMap> map = new HashMap<>();
+        IntLongMap origCounts = newMutableMap();
         origCounts.put(1, 4L);
         map.put("foo", origCounts);
 
@@ -269,19 +271,19 @@ public class SkybarRegistryTest {
             }, null);
         }
 
-        List<Map<String, Map<Integer, Long>>> chunks = Collections.synchronizedList(new ArrayList<>());
+        List<Map<String, IntLongMap>> chunks = Collections.synchronizedList(new ArrayList<>());
 
         completionService.submit(() -> {
             numFutures.incrementAndGet();
             boolean keepGoing = true;
 
             chunks.add(r.getCurrentSnapshot((delta) -> {
-                HashMap<String, Map<Integer, Long>> copy = new HashMap<>();
-                delta.forEach((source, counts) -> copy.put(source, new HashMap<>(counts)));
+                HashMap<String, IntLongMap> copy = new HashMap<>();
+                delta.forEach((source, counts) -> copy.put(source, newMutableMap(counts)));
                 chunks.add(copy);
             }));
 
-            HashMap<String, Map<Integer, Long>> deltaBuffer = new HashMap<>();
+            HashMap<String, IntLongMap> deltaBuffer = new HashMap<>();
             while (keepGoing) {
                 if (visitThreadsDone.get() == numVisitThreads) {
                     keepGoing = false;
@@ -306,8 +308,8 @@ public class SkybarRegistryTest {
 
         Map<String, Map<Integer, Long>> totals = new HashMap<>();
 
-        for (Map<String, Map<Integer, Long>> chunk : chunks) {
-            for (Map.Entry<String, Map<Integer, Long>> sourceCounts : chunk.entrySet()) {
+        for (Map<String, IntLongMap> chunk : chunks) {
+            for (Map.Entry<String, IntLongMap> sourceCounts : chunk.entrySet()) {
                 String sourceFile = sourceCounts.getKey();
                 totals.putIfAbsent(sourceFile, new HashMap<>());
 
@@ -349,7 +351,7 @@ public class SkybarRegistryTest {
      * @param lineNum  line number to check
      * @param count    expected count
      */
-    private void assertSnapshotCount(Map<String, Map<Integer, Long>> data, String source, int numLines, int lineNum,
+    private void assertSnapshotCount(Map<String, IntLongMap> data, String source, int numLines, int lineNum,
             int count) {
         assertEquals(1, data.size());
         assertEquals(source, data.keySet().iterator().next());

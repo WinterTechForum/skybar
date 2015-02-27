@@ -11,6 +11,8 @@ import java.util.function.BiFunction;
 import java.util.function.Consumer;
 import javax.annotation.concurrent.GuardedBy;
 import javax.annotation.concurrent.ThreadSafe;
+import net.openhft.koloboke.collect.map.IntLongMap;
+import net.openhft.koloboke.collect.map.hash.HashIntLongMaps;
 import org.HdrHistogram.WriterReaderPhaser;
 
 @ThreadSafe
@@ -35,7 +37,7 @@ public class SkybarRegistry {
      * Stores all accumulated counts to serve as the initial data from which future deltas will apply to
      */
     @GuardedBy("this")
-    private final Map<String, Map<Integer, Long>> accumulatedCounts = new HashMap<>();
+    private final Map<String, IntLongMap> accumulatedCounts = new HashMap<>();
 
     @GuardedBy("this")
     private final List<DeltaListener> listeners = new ArrayList<>();
@@ -92,7 +94,7 @@ public class SkybarRegistry {
     /**
      * @param deltaBuffer map to use to write delta into
      */
-    public void updateListeners(Map<String, Map<Integer, Long>> deltaBuffer) {
+    public void updateListeners(Map<String, IntLongMap> deltaBuffer) {
         deltaBuffer.forEach((s, counts) -> counts.clear());
 
         synchronized (this) {
@@ -106,7 +108,7 @@ public class SkybarRegistry {
             */
                 SourceLocation location = indexToSourceLoc.get(index);
 
-                BiFunction<String, Map<Integer, Long>, Map<Integer, Long>> mapUpdater
+                BiFunction<String, IntLongMap, IntLongMap> mapUpdater
                         = getMapUpdater(location.lineNum, adder);
                 deltaBuffer.compute(location.source, mapUpdater);
                 accumulatedCounts.compute(location.source, mapUpdater);
@@ -127,12 +129,12 @@ public class SkybarRegistry {
      * @param deltaListener the listener to be called when a delta is available
      * @return the current accumulated state
      */
-    public synchronized Map<String, Map<Integer, Long>> getCurrentSnapshot(DeltaListener deltaListener) {
+    public synchronized Map<String, IntLongMap> getCurrentSnapshot(DeltaListener deltaListener) {
         listeners.add(deltaListener);
 
         // deep copy
-        HashMap<String, Map<Integer, Long>> copy = new HashMap<>();
-        accumulatedCounts.forEach((source, counts) -> copy.put(source, new HashMap<>(counts)));
+        HashMap<String, IntLongMap> copy = new HashMap<>();
+        accumulatedCounts.forEach((source, counts) -> copy.put(source, HashIntLongMaps.newImmutableMap(counts)));
         return copy;
     }
 
@@ -140,25 +142,16 @@ public class SkybarRegistry {
         listeners.remove(listener);
     }
 
-    static BiFunction<String, Map<Integer, Long>, Map<Integer, Long>> getMapUpdater(int lineNum, LongAdder adder) {
+    static BiFunction<String, IntLongMap, IntLongMap> getMapUpdater(int lineNum, LongAdder adder) {
         return (source, counts) -> {
             if (counts == null) {
                 // no count map; create a new map with just the one count set
-                HashMap<Integer, Long> newCounts = new HashMap<>();
+                IntLongMap newCounts = HashIntLongMaps.newMutableMap();
                 newCounts.put(lineNum, adder.longValue());
                 return newCounts;
             }
 
-            // update count in existing counts map
-            counts.compute(lineNum, (line, count) -> {
-                if (count == null) {
-                    // no count yet, use adder value
-                    return adder.longValue();
-                }
-
-                // already a count, add on the adder value
-                return count + adder.longValue();
-            });
+            counts.addValue(lineNum, adder.longValue());
 
             return counts;
         };
@@ -203,5 +196,5 @@ public class SkybarRegistry {
      * need to keep the contents.
      */
     @FunctionalInterface
-    public interface DeltaListener extends Consumer<Map<String, Map<Integer, Long>>> {}
+    public interface DeltaListener extends Consumer<Map<String, IntLongMap>> {}
 }

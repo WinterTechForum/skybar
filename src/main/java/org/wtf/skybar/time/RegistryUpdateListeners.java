@@ -1,6 +1,8 @@
 package org.wtf.skybar.time;
 
+import java.util.HashMap;
 import java.util.Map;
+import net.openhft.koloboke.collect.map.IntLongMap;
 import org.eclipse.jetty.util.component.LifeCycle;
 import org.eclipse.jetty.util.component.LifeCycle.Listener;
 import org.eclipse.jetty.util.log.Log;
@@ -15,21 +17,20 @@ public class RegistryUpdateListeners extends Thread implements Listener {
     public static final long INITIAL_DELAY = 200L;
     public static final long PULSE_PERIOD = 200L;
     private final SkybarRegistry registry;
-    private final Map<String, Map<Integer, Long>> tempMap;
 
     public RegistryUpdateListeners(SkybarRegistry registry) {
         super("RegistryUpdateListeners");
         super.setDaemon(true);
         this.registry = registry;
-        this.tempMap = new java.util.LinkedHashMap<>();
     }
 
     @Override
     public void run() {
+        Map<String, IntLongMap> deltaBuffer = new HashMap<>();
         try {
             Thread.sleep(INITIAL_DELAY);
             while (!this.isInterrupted()) {
-                this.registry.updateListeners(tempMap);
+                this.registry.updateListeners(deltaBuffer);
                 Thread.sleep(PULSE_PERIOD);
             }
         } catch (InterruptedException e) {
