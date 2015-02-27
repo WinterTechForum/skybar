@@ -18,6 +18,9 @@ import org.eclipse.jetty.websocket.client.ClientUpgradeRequest;
 import org.eclipse.jetty.websocket.client.WebSocketClient;
 import org.wtf.skybar.web.WebServer;
 
+/**
+ * Starts up the server, "visits lines" as quickly as possible, and subscribes to updates via WebSocket.
+ */
 public final class SkybarStressTool {
     private SkybarRegistry r = SkybarRegistry.registry;
 

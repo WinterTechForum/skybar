@@ -7,9 +7,6 @@ import org.wtf.skybar.registry.SkybarRegistry;
 import org.wtf.skybar.transform.SkybarTransformer;
 import org.wtf.skybar.web.WebServer;
 
-/**
- *
- */
 public class SkybarAgent {
 
     public static final String SOURCE_PATH_SYS_PROPERTY = "skybar.sourcePath";

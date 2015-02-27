@@ -1,13 +1,12 @@
 package org.wtf.skybar.transform;
 
-/**
- *
- */
-
 import org.objectweb.asm.MethodVisitor;
 import org.wtf.skybar.registry.SkybarRegistry;
 import org.wtf.skybar.transform.util.WorkingLineNumberVisitor;
 
+/**
+ * Inserts instrumentation to update the SkybarRegistry on each line number.
+ */
 class SkybarMethodVisitor extends WorkingLineNumberVisitor {
 
     private final String sourceFile;
@@ -19,22 +18,16 @@ class SkybarMethodVisitor extends WorkingLineNumberVisitor {
 
     @Override
     protected void onLineNumber(int lineNumber) {
-        // TODO: This just outputs the count to System.out.
-        // Instead, inject a call to SkybarRegistry.registry.visitLine()
-        // Hint: HelloWorldAsm in tests will output the ASM code which produces HelloWorld's byte code
-//        mv.visitFieldInsn(GETSTATIC, "java/lang/System", "out", "Ljava/io/PrintStream;");
-//        mv.visitLdcInsn("Running line " + lineNumber + " of source file " + sourceFile);
-//        mv.visitMethodInsn(INVOKEVIRTUAL, "java/io/PrintStream", "println", "(Ljava/lang/String;)V", false);
-
         final long index = SkybarRegistry.registry.registerLine(sourceFile, lineNumber);
 
-        mv.visitFieldInsn(GETSTATIC, "org/wtf/skybar/registry/SkybarRegistry", "registry", "Lorg/wtf/skybar/registry/SkybarRegistry;");
+        mv.visitFieldInsn(GETSTATIC, "org/wtf/skybar/registry/SkybarRegistry", "registry",
+                "Lorg/wtf/skybar/registry/SkybarRegistry;");
         mv.visitLdcInsn(index);
         mv.visitMethodInsn(INVOKEVIRTUAL, "org/wtf/skybar/registry/SkybarRegistry", "visitLine", "(J)V", false);
     }
 
     @Override
     public void visitMaxs(int maxStack, int maxLocals) {
-        super.visitMaxs(maxStack+3, maxLocals);
+        super.visitMaxs(maxStack + 3, maxLocals);
     }
 }

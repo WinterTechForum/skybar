@@ -15,6 +15,9 @@ import net.openhft.koloboke.collect.map.IntLongMap;
 import net.openhft.koloboke.collect.map.hash.HashIntLongMaps;
 import org.HdrHistogram.WriterReaderPhaser;
 
+/**
+ * Handles accumulating line visits and distributing deltas to any registered listeners.
+ */
 @ThreadSafe
 public class SkybarRegistry {
 

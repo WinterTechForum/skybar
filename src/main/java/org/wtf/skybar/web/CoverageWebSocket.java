@@ -13,7 +13,7 @@ import org.wtf.skybar.registry.SkybarRegistry;
 import org.wtf.skybar.registry.SkybarRegistry.DeltaListener;
 
 /**
- * Send out Coverage map via JSON on initial connect and every second.
+ * Send out Coverage map via JSON on initial connect and every time a delta is published.
  */
 public class CoverageWebSocket implements WebSocketListener, DeltaListener {
     private static final Logger LOG = Log.getLogger(CoverageWebSocket.class);
