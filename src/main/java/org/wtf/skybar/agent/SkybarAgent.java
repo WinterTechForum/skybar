@@ -3,6 +3,7 @@ package org.wtf.skybar.agent;
 import java.io.File;
 import java.io.IOException;
 import java.lang.instrument.Instrumentation;
+import org.wtf.skybar.registry.SkybarRegistry;
 import org.wtf.skybar.transform.SkybarTransformer;
 import org.wtf.skybar.web.WebServer;
 
@@ -23,7 +24,7 @@ public class SkybarAgent {
         }
         instrumentation.addTransformer(new SkybarTransformer(prefix), false);
         int port = Integer.parseInt(System.getProperty("skybar.serverPort", "4321"));
-        new WebServer(port, getSourcePathString()).start();
+        new WebServer(SkybarRegistry.registry, port, getSourcePathString()).start();
         System.out.println("Skybar started on port " + port + " against package:" + prefix);
     }
 

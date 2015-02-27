@@ -42,3 +42,6 @@ java \
 ```
 
 Once that's running, connect to [http://localhost:4321](http://localhost:4321) (change the port as needed if you're not using the default) and use your app. You should see live updates to the number of times each line of code is executed.
+
+# What's with the name?
+This project started as a 1-day hackathon at WTF2015. We wanted to set the bar high, and the sky was the limit...

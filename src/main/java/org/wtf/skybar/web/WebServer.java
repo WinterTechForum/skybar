@@ -21,10 +21,12 @@ import org.wtf.skybar.time.RegistryUpdateListeners;
 
 public class WebServer {
     private Server server;
+    private final SkybarRegistry registry;
     private final int port;
     private final String sourcePath;
 
-    public WebServer(int port, String sourcePath) {
+    public WebServer(SkybarRegistry registry, int port, String sourcePath) {
+        this.registry = registry;
         this.port = port;
         this.sourcePath = sourcePath;
     }
@@ -65,7 +67,7 @@ public class WebServer {
             handlers.addHandler(wsCoverageContext);
 
             // Make sure the Registry calls all its DeltaListeners every period (200ms?)
-            RegistryUpdateListeners timer = new RegistryUpdateListeners(SkybarRegistry.registry);
+            RegistryUpdateListeners timer = new RegistryUpdateListeners(registry);
             server.addLifeCycleListener(timer);
             timer.start();
             
