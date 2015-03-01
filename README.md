@@ -15,19 +15,21 @@ Build the jar:
 ./gradlew
 ```
 
-This will produce `build/libs/skybar-[version]-all.jar`. Use this jar as the argument to `-javaagent` in a `java` invocation. You'll also need to provide several system properties:
+This will produce `build/libs/skybar-[version]-all.jar`. Use this jar as the argument to `-javaagent` in a `java` invocation. You'll also need to provide several config properties (see `SkybarConfig` for more info):
 
-- `skybar.includedPackage`: package prefix to instrument, slash-separated as in `com/foo/bar/baz`. 
-- `skybar.serverPort`: port for web ui, defaults to `4321`.
-- `skybar.sourcePath`: filesystem path to source
+- `skybar.instrumentation.classRegex`: class name regex for classes to instrument. The name is slash-separated as in `com/foo/bar/baz`. 
+- `skybar.webUi.port`: port for web ui, defaults to `54321`. Or use 0 to have it pick an available port.
+- `skybar.source.fsPath`: filesystem path to source
+
+These can be specified in a properties file that is specified in the `skybar.configFile` system property, or specified one at a time with system properties. If both are present, the system property-defined config values are used.
 
 Here's an example invocation using the skybar demo app:
 
 ```
 java \
-  -Dskybar.includedPackage=com/skybar/demo \
-  -Dskybar.serverPort=4321 \
-  -Dskybar.sourcePath=../skybar-demo/src/main/java \
+  -Dskybar.instrumentation.classRegex='com/skybar/demo/.*' \
+  -Dskybar.webUi.port=4321 \
+  -Dskybar.source.fsPath=../skybar-demo/src/main/java \
   -javaagent:path/to/skybar-1.0-SNAPSHOT-all.jar \
   -jar ../skybar-demo/target/skybar-demo-1.0-SNAPSHOT-jetty-console.war --headless
 ```

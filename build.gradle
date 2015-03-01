@@ -18,7 +18,8 @@ repositories {
 }
 
 ext.deps = [
-    jetty: '9.3.0.M1'
+    jetty: '9.3.0.M1',
+    slf4j: '1.7.10'
 ]
 
 dependencies {
@@ -31,17 +32,22 @@ dependencies {
   compile 'com.google.code.findbugs:jsr305:3.0.0'
   compile 'org.hdrhistogram:HdrHistogram:2.1.4'
   compile 'net.openhft:koloboke-impl-jdk8:0.6.6'
+  compile 'org.skife.config:config-magic:0.17'
+  compile 'commons-configuration:commons-configuration:1.10'
+  compile "org.slf4j:slf4j-api:${deps.slf4j}"
+
+  runtime "org.slf4j:slf4j-simple:${deps.slf4j}"
 
   testCompile group: 'junit', name: 'junit', version: '4.12'
   testCompile "org.eclipse.jetty.websocket:websocket-client:${deps.jetty}"
   testRuntime 'org.slf4j:slf4j-simple:1.7.10'
-
 }
 
 shadowJar {
   relocate 'org.objectweb.asm', 'org.wtf.skybar.shaded.asm'
   relocate 'javax.servlet', 'org.wtf.skybar.shaded.javax.servlet'
   relocate 'org.eclipse.jetty', 'org.wtf.skybar.shaded.org.eclipse.jetty'
+  relocate 'org.slf4j', 'org.wtf.skybar.shaded.org.slf4j'
 
   manifest {
     attributes 'Premain-Class': 'org.wtf.skybar.agent.SkybarAgent'
@@ -49,12 +55,12 @@ shadowJar {
 }
 
 jmh {
-    // This is an extension with the exact same name as the jmh test
-    jvmArgsPrepend = "-javaagent:${tasks.shadowJar.archivePath}"
-    jvmArgsAppend = "-Dskybar.includedPackage=com.example.skybar.test"
-    includeTests = true
-    iterations = 1
-    fork = 1
+  // This is an extension with the exact same name as the jmh test
+  jvmArgsPrepend = "-javaagent:${tasks.shadowJar.archivePath}"
+  jvmArgsAppend = "-Dskybar.includedPackage=com.example.skybar.test"
+  includeTests = true
+  iterations = 1
+  fork = 1
 }
 
 //tasks.jmh.dependsOn 'shadowJar'
