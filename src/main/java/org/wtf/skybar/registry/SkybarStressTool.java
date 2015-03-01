@@ -38,8 +38,8 @@ public final class SkybarStressTool {
 
     public void go(int durationSecs) throws Exception {
 
-        WebServer webServer = new WebServer(r, 12000, ".");
-        webServer.start();
+        WebServer webServer = new WebServer(r, 0, ".");
+        int port = webServer.start();
 
         long seed = new Random().nextLong();
         System.out.println("Seed: " + seed);
@@ -79,7 +79,7 @@ public final class SkybarStressTool {
         WebSocketClient client = new WebSocketClient();
         client.start();
         futures.add(client.connect(new SimpleEchoSocket(),
-                new URI("ws://localhost:12000/livecoverage/"),
+                new URI(String.format("ws://localhost:%d/livecoverage/", port)),
                 new ClientUpgradeRequest()));
 
         Thread.sleep(durationSecs * 1000);
@@ -87,8 +87,6 @@ public final class SkybarStressTool {
         ex.shutdownNow();
 
         client.stop();
-
-        webServer.stop();
 
         for (Future<?> future : futures) {
             future.get();

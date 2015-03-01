@@ -5,6 +5,9 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+
+import org.eclipse.jetty.server.AbstractConnectionFactory;
+import org.eclipse.jetty.server.HttpConnectionFactory;
 import org.eclipse.jetty.server.Server;
 import org.eclipse.jetty.server.ServerConnector;
 import org.eclipse.jetty.server.handler.ContextHandler;
@@ -13,6 +16,10 @@ import org.eclipse.jetty.servlet.DefaultServlet;
 import org.eclipse.jetty.servlet.ServletContextHandler;
 import org.eclipse.jetty.util.resource.Resource;
 import org.eclipse.jetty.util.resource.ResourceCollection;
+import org.eclipse.jetty.util.thread.QueuedThreadPool;
+import org.eclipse.jetty.util.thread.ScheduledExecutorScheduler;
+import org.eclipse.jetty.util.thread.Scheduler;
+import org.eclipse.jetty.util.thread.ThreadPool;
 import org.eclipse.jetty.websocket.server.WebSocketHandler;
 import org.eclipse.jetty.websocket.servlet.WebSocketServletFactory;
 import org.wtf.skybar.registry.SkybarRegistry;
@@ -31,12 +38,23 @@ public class WebServer {
         this.sourcePath = sourcePath;
     }
 
-    public void start() {
+    /**
+     * @return port which server started on. Will be different than configured port when port 0 is used, which is
+     * in tests.
+     */
+    public int start() {
         try {
-            server = new Server();
-            ServerConnector connector = new ServerConnector(server);
+            QueuedThreadPool pool = new QueuedThreadPool();
+            pool.setDaemon(true);
+            server = new Server(pool);
+
+            Scheduler scheduler = new ScheduledExecutorScheduler(null, true);
+            HttpConnectionFactory httpConnectionFactory = new HttpConnectionFactory();
+
+            ServerConnector connector = new ServerConnector(server, null, scheduler, null, -1, -1, httpConnectionFactory);
             connector.setPort(port);
             server.addConnector(connector);
+
             ContextHandlerCollection handlers = new ContextHandlerCollection();
 
             ServletContextHandler handler = new ServletContextHandler();
@@ -73,6 +91,8 @@ public class WebServer {
             
             server.setHandler(handlers);
             server.start();
+
+            return connector.getLocalPort();
         } catch (Exception e) {
             throw new RuntimeException(e);
         }
