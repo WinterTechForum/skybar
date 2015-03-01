@@ -88,8 +88,6 @@ public final class SkybarStressTool {
 
         client.stop();
 
-        //webServer.stop();
-
         for (Future<?> future : futures) {
             future.get();
         }
