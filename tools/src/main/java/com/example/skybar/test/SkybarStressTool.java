@@ -1,4 +1,4 @@
-package org.wtf.skybar.registry;
+package com.example.skybar.test;
 
 import java.net.URI;
 import java.util.ArrayList;
@@ -16,6 +16,7 @@ import org.eclipse.jetty.websocket.api.annotations.OnWebSocketMessage;
 import org.eclipse.jetty.websocket.api.annotations.WebSocket;
 import org.eclipse.jetty.websocket.client.ClientUpgradeRequest;
 import org.eclipse.jetty.websocket.client.WebSocketClient;
+import org.wtf.skybar.registry.SkybarRegistry;
 import org.wtf.skybar.web.WebServer;
 
 /**

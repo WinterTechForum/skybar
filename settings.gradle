@@ -1,1 +1,3 @@
-rootProject.name = 'skybar'
+rootProject.name = 'skybar-parent'
+
+include 'skybar', 'tools'
