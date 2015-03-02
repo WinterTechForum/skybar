@@ -1,0 +1,43 @@
+plugins {
+  id 'com.github.johnrengelman.shadow' version '1.2.1'
+  id 'me.champeau.gradle.jmh' version '0.2.0'
+  id 'maven'
+}
+
+dependencies {
+  compile group: 'org.ow2.asm', name: 'asm-debug-all', version: '5.0.3'
+  compile group: 'org.eclipse.jetty', name: 'jetty-server', version: "${deps.jetty}"
+  compile group: 'org.eclipse.jetty', name: 'jetty-util-ajax', version: "${deps.jetty}"
+  compile group: 'org.eclipse.jetty.websocket', name: 'websocket-server', version: "${deps.jetty}"
+  compile group: 'org.eclipse.jetty', name: 'jetty-servlet', version: "${deps.jetty}"
+  compile group: 'org.webjars', name: 'angularjs', version: '1.3.13'
+  compile 'com.google.code.findbugs:jsr305:3.0.0'
+  compile 'org.hdrhistogram:HdrHistogram:2.1.4'
+  compile 'net.openhft:koloboke-impl-jdk8:0.6.6'
+
+  testCompile group: 'junit', name: 'junit', version: '4.12'
+  testCompile "org.eclipse.jetty.websocket:websocket-client:${deps.jetty}"
+  testRuntime 'org.slf4j:slf4j-simple:1.7.10'
+}
+
+shadowJar {
+  relocate 'org.objectweb.asm', 'org.wtf.skybar.shaded.asm'
+  relocate 'javax.servlet', 'org.wtf.skybar.shaded.javax.servlet'
+  relocate 'org.eclipse.jetty', 'org.wtf.skybar.shaded.org.eclipse.jetty'
+
+  manifest {
+    attributes 'Premain-Class': 'org.wtf.skybar.agent.SkybarAgent'
+  }
+}
+
+jmh {
+  // This is an extension with the exact same name as the jmh test
+  jvmArgsPrepend = "-javaagent:${tasks.shadowJar.archivePath}"
+  jvmArgsAppend = "-Dskybar.includedPackage=com.example.skybar.test"
+  includeTests = true
+  iterations = 1
+  fork = 1
+}
+
+//tasks.jmh.dependsOn 'shadowJar'
+tasks.jmh.inputs.files(tasks.shadowJar.outputs.files)
