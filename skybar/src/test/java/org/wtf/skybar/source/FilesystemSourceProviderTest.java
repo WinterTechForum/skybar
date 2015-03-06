@@ -5,6 +5,7 @@ import org.junit.Test;
 
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
+import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
@@ -22,7 +23,16 @@ public class FilesystemSourceProviderTest {
 
     @Before
     public void setUp() throws Exception {
-        sp = new FilesystemSourceProvider(Paths.get("skybar", "src", "test", "java"));
+        Path gradlePath = Paths.get("src", "test", "java");
+        Path intellijPath = Paths.get("skybar").resolve(gradlePath);
+        // hackily detect if we're running from intellij or gradle
+        if (intellijPath.toFile().exists()) {
+            sp = new FilesystemSourceProvider(intellijPath);
+        } else if (gradlePath.toFile().exists()) {
+            sp = new FilesystemSourceProvider(gradlePath);
+        } else {
+            throw new RuntimeException("Can't find source");
+        }
     }
 
     @Test
