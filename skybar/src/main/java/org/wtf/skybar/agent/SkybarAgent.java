@@ -19,9 +19,7 @@ public class SkybarAgent {
             System.err.println("skybar.includedPackage system property not defined.");
             System.exit(-1);
         }
-        instrumentation
-            .addTransformer(new SkybarTransformer(prefix),
-                false);
+        instrumentation.addTransformer(new SkybarTransformer(prefix), false);
         int port = Integer.parseInt(System.getProperty("skybar.serverPort", "4321"));
         new WebServer(SkybarRegistry.registry, port, getSourcePathString()).start();
         System.out.println("Skybar started on port " + port + " against package:" + prefix);
