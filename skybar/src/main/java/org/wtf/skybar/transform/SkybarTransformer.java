@@ -1,10 +1,11 @@
 package org.wtf.skybar.transform;
 
+import org.objectweb.asm.ClassReader;
+import org.objectweb.asm.ClassWriter;
+
 import java.lang.instrument.ClassFileTransformer;
 import java.lang.instrument.IllegalClassFormatException;
 import java.security.ProtectionDomain;
-import org.objectweb.asm.ClassReader;
-import org.objectweb.asm.ClassWriter;
 
 public class SkybarTransformer implements ClassFileTransformer {
     private final String prefix;
@@ -16,14 +17,15 @@ public class SkybarTransformer implements ClassFileTransformer {
     @Override
     public byte[] transform(ClassLoader loader, String className, Class<?> classBeingRedefined, ProtectionDomain protectionDomain, byte[] bytes) throws IllegalClassFormatException {
 
-        if(shouldInstrument(className, bytes))  {
-            System.out.println("Instrumenting " + className);
-            ClassReader reader = new ClassReader(bytes);
-            ClassWriter writer = new ClassWriter(reader, 0);
-            reader.accept(new SkybarClassVisitor(writer), ClassReader.EXPAND_FRAMES);
-            return writer.toByteArray();
+        if (!shouldInstrument(className, bytes)) {
+            return null;
         }
-        return bytes;
+
+        System.out.println("Instrumenting " + className);
+        ClassReader reader = new ClassReader(bytes);
+        ClassWriter writer = new ClassWriter(reader, 0);
+        reader.accept(new SkybarClassVisitor(writer), ClassReader.EXPAND_FRAMES);
+        return writer.toByteArray();
     }
 
     private boolean shouldInstrument(String className, byte[] bytes) {
@@ -37,6 +39,6 @@ public class SkybarTransformer implements ClassFileTransformer {
             return false; // Can't instrument with no byte code
         }
         // Ok, do we match our prefix?
-        return className.startsWith(prefix) && !className.contains("$$");
+        return className.startsWith(prefix);
     }
 }

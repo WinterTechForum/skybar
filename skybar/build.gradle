@@ -37,6 +37,8 @@ jmh {
   includeTests = true
   iterations = 1
   fork = 1
+
+  jmhVersion = '1.6.2'
 }
 
 //tasks.jmh.dependsOn 'shadowJar'
