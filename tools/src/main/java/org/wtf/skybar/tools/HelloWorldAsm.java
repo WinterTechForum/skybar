@@ -1,4 +1,4 @@
-package com.example.skybar.test;
+package org.wtf.skybar.tools;
 
 import org.objectweb.asm.ClassReader;
 import org.objectweb.asm.ClassVisitor;

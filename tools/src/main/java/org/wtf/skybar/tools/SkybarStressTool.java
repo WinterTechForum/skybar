@@ -1,4 +1,4 @@
-package com.example.skybar.test;
+package org.wtf.skybar.tools;
 
 import java.net.URI;
 import java.util.ArrayList;
@@ -39,7 +39,7 @@ public final class SkybarStressTool {
 
     public void go(int durationSecs) throws Exception {
 
-        WebServer webServer = new WebServer(r, 0, ".");
+        WebServer webServer = new WebServer(r, 0, new ArrayList<>());
         int port = webServer.start();
 
         long seed = new Random().nextLong();

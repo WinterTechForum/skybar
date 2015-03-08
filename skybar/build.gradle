@@ -33,7 +33,7 @@ shadowJar {
 jmh {
   // This is an extension with the exact same name as the jmh test
   jvmArgsPrepend = "-javaagent:${tasks.shadowJar.archivePath}"
-  jvmArgsAppend = "-Dskybar.includedPackage=com.example.skybar.test"
+  jvmArgsAppend = "-Dskybar.includedPackage=org.wtf.skybar.tools"
   includeTests = true
   iterations = 1
   fork = 1
