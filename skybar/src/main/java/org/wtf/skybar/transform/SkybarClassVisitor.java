@@ -4,7 +4,7 @@ import org.objectweb.asm.ClassVisitor;
 import org.objectweb.asm.MethodVisitor;
 import org.objectweb.asm.Opcodes;
 
-class SkybarClassVisitor extends ClassVisitor implements Opcodes{
+class SkybarClassVisitor extends ClassVisitor implements Opcodes {
     private String className;
     private String sourceFile;
 
@@ -21,7 +21,7 @@ class SkybarClassVisitor extends ClassVisitor implements Opcodes{
     @Override
     public void visitSource(String source, String debug) {
         super.visitSource(source, debug);
-        this.sourceFile = className.substring(0, className.lastIndexOf("/") + 1) +source;
+        this.sourceFile = className.substring(0, className.lastIndexOf("/") + 1) + source;
     }
 
     @Override
