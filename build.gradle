@@ -15,8 +15,8 @@ subprojects {
 defaultTasks 'clean', 'build', 'shadowJar'
 
 ext.deps = [
-    jetty: '9.3.0.M1',
-    slf4j: '1.7.10'
+    slf4j: '1.7.10',
+    jetty: '9.2.9.v20150224'
 ]
 
 task wrapper(type: Wrapper) {

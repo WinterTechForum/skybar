@@ -22,7 +22,7 @@ public class SkybarTransformer implements ClassFileTransformer {
     public byte[] transform(ClassLoader loader, String className, Class<?> classBeingRedefined,
             ProtectionDomain protectionDomain, byte[] bytes) throws IllegalClassFormatException {
 
-        if (shouldInstrument(className, bytes)) {
+        if(shouldInstrument(className, loader, bytes))  {
             logger.debug("Instrumenting " + className);
             ClassReader reader = new ClassReader(bytes);
             ClassWriter writer = new ClassWriter(reader, 0);
@@ -32,8 +32,11 @@ public class SkybarTransformer implements ClassFileTransformer {
         return bytes;
     }
 
-    private boolean shouldInstrument(String className, byte[] bytes) {
-        if (className == null) {
+    private boolean shouldInstrument(String className, ClassLoader loader, byte[] bytes) {
+        if(loader == null) {
+            return false; // JDK classes
+        }
+        if(className == null) {
             return false; // Lambda weirdness?
         }
         if (className.startsWith("org/wtf/skybar")) {
