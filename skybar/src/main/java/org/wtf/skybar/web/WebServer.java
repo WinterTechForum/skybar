@@ -5,8 +5,6 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
-
-import org.eclipse.jetty.server.AbstractConnectionFactory;
 import org.eclipse.jetty.server.HttpConnectionFactory;
 import org.eclipse.jetty.server.Server;
 import org.eclipse.jetty.server.ServerConnector;
@@ -14,33 +12,33 @@ import org.eclipse.jetty.server.handler.ContextHandler;
 import org.eclipse.jetty.server.handler.ContextHandlerCollection;
 import org.eclipse.jetty.servlet.DefaultServlet;
 import org.eclipse.jetty.servlet.ServletContextHandler;
+import org.eclipse.jetty.servlet.ServletHolder;
 import org.eclipse.jetty.util.resource.Resource;
 import org.eclipse.jetty.util.resource.ResourceCollection;
 import org.eclipse.jetty.util.thread.QueuedThreadPool;
 import org.eclipse.jetty.util.thread.ScheduledExecutorScheduler;
 import org.eclipse.jetty.util.thread.Scheduler;
-import org.eclipse.jetty.util.thread.ThreadPool;
 import org.eclipse.jetty.websocket.server.WebSocketHandler;
 import org.eclipse.jetty.websocket.servlet.WebSocketServletFactory;
 import org.wtf.skybar.registry.SkybarRegistry;
+import org.wtf.skybar.source.SourceProvider;
 import org.wtf.skybar.time.RegistryUpdateListeners;
-
 
 public class WebServer {
     private Server server;
     private final SkybarRegistry registry;
     private final int port;
-    private final String sourcePath;
+    private final List<SourceProvider> sourceProviders;
 
-    public WebServer(SkybarRegistry registry, int port, String sourcePath) {
+    public WebServer(SkybarRegistry registry, int port, List<SourceProvider> sourceProviders) {
         this.registry = registry;
         this.port = port;
-        this.sourcePath = sourcePath;
+        this.sourceProviders = sourceProviders;
     }
 
     /**
-     * @return port which server started on. Will be different than configured port when port 0 is used, which is
-     * in tests.
+     * @return port which server started on. Will be different than configured port when port 0 is used, which is in
+     * tests.
      */
     public int start() {
         try {
@@ -51,7 +49,8 @@ public class WebServer {
             Scheduler scheduler = new ScheduledExecutorScheduler(null, true);
             HttpConnectionFactory httpConnectionFactory = new HttpConnectionFactory();
 
-            ServerConnector connector = new ServerConnector(server, null, scheduler, null, -1, -1, httpConnectionFactory);
+            ServerConnector connector =
+                new ServerConnector(server, null, scheduler, null, -1, -1, httpConnectionFactory);
             connector.setPort(port);
             server.addConnector(connector);
 
@@ -64,13 +63,10 @@ public class WebServer {
             handler.setWelcomeFiles(new String[]{"index.html"});
             handlers.addHandler(handler);
 
-            // Add servlet to deliver Java source files
-            ContextHandler sourceContext = new ContextHandler();
-            sourceContext.setContextPath("/source");
-            SourceLister sourceLister = new SourceLister(sourcePath);
-            sourceLister.setDirectoriesListed(true);
-            sourceContext.setHandler(sourceLister);
-            handlers.addHandler(sourceContext);
+            ServletContextHandler sourceHandler = new ServletContextHandler();
+            sourceHandler.setContextPath("/source");
+            sourceHandler.addServlet(new ServletHolder(new SourceServlet(sourceProviders)), "/");
+            handlers.addHandler(sourceHandler);
 
             // Add a WebSocketServlet for pushing touched classes live
             ContextHandler wsCoverageContext = new ContextHandler();
@@ -88,7 +84,7 @@ public class WebServer {
             RegistryUpdateListeners timer = new RegistryUpdateListeners(registry);
             server.addLifeCycleListener(timer);
             timer.start();
-            
+
             server.setHandler(handlers);
             server.start();
 
@@ -102,15 +98,14 @@ public class WebServer {
         List<Resource> bases = new ArrayList<>();
 
         File source = new File("src/main/resources/org/wtf/skybar/web");
-        if(source.exists()) {
+        if (source.exists()) {
             bases.add(Resource.newResource(source));
         } else {
             bases.add(Resource.newClassPathResource("/org/wtf/skybar/web/"));
         }
 
-
         Collections.list(getClass().getClassLoader().getResources("META-INF/resources/"))
-                .forEach(url -> bases.add(Resource.newResource(url)));
+            .forEach(url -> bases.add(Resource.newResource(url)));
 
         return new ResourceCollection(bases.toArray(new Resource[bases.size()]));
     }
