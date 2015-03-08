@@ -21,7 +21,7 @@ This will produce `build/libs/skybar-[version]-all.jar`. Use this jar as the arg
 - `skybar.webUi.port`: port for web ui, defaults to `54321`. Or use 0 to have it pick an available port.
 - `skybar.source.fsPath`: filesystem path to source
 
-These can be specified in a properties file that is specified in the `skybar.configFile` system property, or specified one at a time with system properties. If both are present, the system property-defined config values are used.
+These can be specified in a properties file that is specified in the `skybar.config` system property or `SKYBAR_CONFIG` env var, or specified one at a time with system properties. System props, env vars, and the ocnfig file's contents are checked in that order.
 
 You can also specify them as environment variables in all-caps form with underscores instead of dots, e.g. `SKYBAR_SOURCE_FSPATH`.
 

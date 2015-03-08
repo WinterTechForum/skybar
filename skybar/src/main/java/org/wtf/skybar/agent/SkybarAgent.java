@@ -38,7 +38,10 @@ public class SkybarAgent {
     }
 
     private static SkybarConfig getSkybarConfig() throws IOException {
-        String configFile = System.getProperty("skybar.configFile");
+        String configFile = System.getProperty("skybar.config");
+        if (configFile == null) {
+            configFile = System.getenv("SKYBAR_CONFIG");
+        }
         Properties fileProps = new Properties();
         if (configFile != null) {
             try (InputStreamReader reader =
