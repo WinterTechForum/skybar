@@ -50,8 +50,10 @@ function openWebSocket($scope) {
          }
       }
     }
-    onCoverageUpdate($scope);
-    $scope.$digest();
+      $scope.$apply(function() {
+          onCoverageUpdate($scope);
+      });
+
   };
   websocket.onerror = function (evt) {
     console.log("onError Event")
@@ -86,10 +88,10 @@ angular.module('skybar', [])
                     { "text": sourceLineTexts[i], "number": (i + 1).toString() }
                   )
               }
-              onCoverageUpdate($scope);
-              $scope.currentSourceFile = sourceFile;
+                $scope.currentSourceFile = sourceFile;
+                onCoverageUpdate($scope);
 
-              console.log($scope.sourceLines)
+              console.log($scope.currentSourceLines)
           }).error(function (data, status) {
               console.log("error loading coverage data:");
               console.log("status: " + status);
