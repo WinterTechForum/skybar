@@ -23,6 +23,8 @@ This will produce `build/libs/skybar-[version]-all.jar`. Use this jar as the arg
 
 These can be specified in a properties file that is specified in the `skybar.configFile` system property, or specified one at a time with system properties. If both are present, the system property-defined config values are used.
 
+You can also specify them as environment variables in all-caps form with underscores instead of dots, e.g. `SKYBAR_SOURCE_FSPATH`.
+
 Here's an example invocation using the skybar demo app:
 
 ```
