@@ -70,7 +70,7 @@ public class CoverageWebSocket implements WebSocketListener, DeltaListener {
     }
 
     static String toJson(Map<String, IntLongMap> data) {
-        return JSON.toString(filterSnap(data));
+        return JSON.toString(data);
     }
 
     private static Map<String, IntLongMap> filterSnap(Map<String, IntLongMap> orig) {
