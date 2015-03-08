@@ -15,8 +15,7 @@ import javax.annotation.Nullable;
 final class ClasspathSourceProvider implements SourceProvider {
     @Nullable
     @Override
-    public String getSource(@Nonnull String className) throws IOException {
-        String sourceFilePath = FilesystemSourceProvider.guessSourceFilePath(className);
+    public String getSource(@Nonnull String sourcePath) throws IOException {
 
         // technically this can be null but only for classes loaded by the bootstrap classloader,
         // and this isn't one of those.
@@ -24,18 +23,13 @@ final class ClasspathSourceProvider implements SourceProvider {
         // now just load the source with whatever we get here (which is probably the system classloader).
         ClassLoader cl = getClass().getClassLoader();
 
-        for (String suffix : FilesystemSourceProvider.SUFFIXES) {
-            String candidate = sourceFilePath + "." + suffix;
-            try (InputStream res = cl.getResourceAsStream(candidate)) {
-                if (res == null) {
-                    continue;
-                }
-
-                return getString(res);
+        try (InputStream res = cl.getResourceAsStream(sourcePath)) {
+            if (res == null) {
+                return null;
             }
-        }
 
-        return null;
+            return getString(res);
+        }
     }
 
     private String getString(InputStream res) throws IOException {

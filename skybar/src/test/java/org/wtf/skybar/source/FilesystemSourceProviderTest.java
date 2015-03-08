@@ -47,26 +47,8 @@ public class FilesystemSourceProviderTest {
     }
 
     @Test
-    public void testFindsInnerClass() throws IOException, NoSuchAlgorithmException {
-        assertEquals(TOP_LEVEL_CLASS_SRC_MD5,
-            md5Hex(sp.getSource("org/wtf/skybar/source/TopLevelClass$InnerClass")));
-    }
-
-    @Test
-    public void testFindsAnonymousInnerClass() throws IOException, NoSuchAlgorithmException {
-        assertEquals(TOP_LEVEL_CLASS_SRC_MD5,
-            md5Hex(sp.getSource("org/wtf/skybar/source/TopLevelClass$1")));
-    }
-
-    @Test
-    public void testFindsStaticInnerClass() throws IOException, NoSuchAlgorithmException {
-        assertEquals(TOP_LEVEL_CLASS_SRC_MD5,
-            md5Hex(sp.getSource("org/wtf/skybar/source/TopLevelClass$StaticInnerClass")));
-    }
-
-    @Test
     public void testFindsTopLevelClass() throws IOException, NoSuchAlgorithmException {
-        assertEquals(TOP_LEVEL_CLASS_SRC_MD5, md5Hex(sp.getSource("org/wtf/skybar/source/TopLevelClass")));
+        assertEquals(TOP_LEVEL_CLASS_SRC_MD5, md5Hex(sp.getSource("org/wtf/skybar/source/TopLevelClass.java")));
     }
 
     static String md5Hex(String input) throws NoSuchAlgorithmException {

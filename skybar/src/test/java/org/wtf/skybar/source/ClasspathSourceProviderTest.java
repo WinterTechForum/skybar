@@ -22,13 +22,6 @@ public class ClasspathSourceProviderTest {
     public void testFindsTopLevelClass() throws IOException, NoSuchAlgorithmException {
         assertEquals(TOP_LEVEL_CLASS_SRC_MD5,
             FilesystemSourceProviderTest
-                .md5Hex(sp.getSource("org/wtf/skybar/source/TopLevelClassInResources")));
-    }
-
-    @Test
-    public void testFindsInnerClass() throws IOException, NoSuchAlgorithmException {
-        assertEquals(TOP_LEVEL_CLASS_SRC_MD5,
-            FilesystemSourceProviderTest
-                .md5Hex(sp.getSource("org/wtf/skybar/source/TopLevelClassInResources$InnerClass")));
+                .md5Hex(sp.getSource("org/wtf/skybar/source/TopLevelClassInResources.java")));
     }
 }
