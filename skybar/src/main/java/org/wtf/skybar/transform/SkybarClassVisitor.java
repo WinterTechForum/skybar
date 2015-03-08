@@ -28,6 +28,7 @@ class SkybarClassVisitor extends ClassVisitor implements Opcodes{
 
     @Override
     public MethodVisitor visitMethod(int access, String name, String desc, String signature, String[] exceptions) {
-        return new SkybarMethodVisitor(sourceFile, version, super.visitMethod(access, name, desc, signature, exceptions));
+        MethodVisitor mv = super.visitMethod(access, name, desc, signature, exceptions);
+        return new SkybarMethodVisitor(access, name, desc, mv, new PerLineInstrumentation(mv, sourceFile, version));
     }
 }
