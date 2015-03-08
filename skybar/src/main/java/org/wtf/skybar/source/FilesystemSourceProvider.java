@@ -1,6 +1,5 @@
 package org.wtf.skybar.source;
 
-import javax.annotation.Nonnull;
 import java.io.File;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
@@ -10,6 +9,7 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 import java.util.stream.Collectors;
+import javax.annotation.Nonnull;
 
 /**
  * Looks up source files in the filesystem
@@ -27,7 +27,7 @@ public final class FilesystemSourceProvider implements SourceProvider {
     }
 
     @Override
-    public String getSource(ClassLoader classLoader, @Nonnull String className) throws IOException {
+    public String getSource(@Nonnull String className) throws IOException {
         String fileBaseName = guessSourceFilePath(className);
         for (String suffix : SUFFIXES) {
             String candidate = fileBaseName + "." + suffix;

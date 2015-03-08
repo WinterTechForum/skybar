@@ -1,8 +1,5 @@
 package org.wtf.skybar.source;
 
-import org.junit.Before;
-import org.junit.Test;
-
 import java.io.File;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
@@ -11,6 +8,8 @@ import java.nio.file.Paths;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.util.Locale;
+import org.junit.Before;
+import org.junit.Test;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
@@ -22,7 +21,6 @@ public class FilesystemSourceProviderTest {
     private static final String TOP_LEVEL_CLASS_SRC_MD5 = "70e823ac0cb5220e6ad8e5fe3548910a";
 
     SourceProvider sp;
-    private ClassLoader classLoader;
 
     @Before
     public void setUp() throws Exception {
@@ -36,40 +34,39 @@ public class FilesystemSourceProviderTest {
         } else {
             throw new RuntimeException("Can't find source, current dir is " + new File(".").getCanonicalPath());
         }
-        classLoader = ClassLoader.getSystemClassLoader();
     }
 
     @Test
     public void testCantFindMissingClass() throws IOException {
-        assertNull(sp.getSource(classLoader, "no/such/class"));
+        assertNull(sp.getSource("no/such/class"));
     }
 
     @Test
     public void testCantFindDirectory() throws IOException {
-        assertNull(sp.getSource(classLoader, "org/wtf/skybar"));
+        assertNull(sp.getSource("org/wtf/skybar"));
     }
 
     @Test
     public void testFindsInnerClass() throws IOException, NoSuchAlgorithmException {
         assertEquals(TOP_LEVEL_CLASS_SRC_MD5,
-            md5Hex(sp.getSource(classLoader, "org/wtf/skybar/source/TopLevelClass$InnerClass")));
+            md5Hex(sp.getSource("org/wtf/skybar/source/TopLevelClass$InnerClass")));
     }
 
     @Test
     public void testFindsAnonymousInnerClass() throws IOException, NoSuchAlgorithmException {
         assertEquals(TOP_LEVEL_CLASS_SRC_MD5,
-            md5Hex(sp.getSource(classLoader, "org/wtf/skybar/source/TopLevelClass$1")));
+            md5Hex(sp.getSource("org/wtf/skybar/source/TopLevelClass$1")));
     }
 
     @Test
     public void testFindsStaticInnerClass() throws IOException, NoSuchAlgorithmException {
         assertEquals(TOP_LEVEL_CLASS_SRC_MD5,
-            md5Hex(sp.getSource(classLoader, "org/wtf/skybar/source/TopLevelClass$StaticInnerClass")));
+            md5Hex(sp.getSource("org/wtf/skybar/source/TopLevelClass$StaticInnerClass")));
     }
 
     @Test
     public void testFindsTopLevelClass() throws IOException, NoSuchAlgorithmException {
-        assertEquals(TOP_LEVEL_CLASS_SRC_MD5, md5Hex(sp.getSource(classLoader, "org/wtf/skybar/source/TopLevelClass")));
+        assertEquals(TOP_LEVEL_CLASS_SRC_MD5, md5Hex(sp.getSource("org/wtf/skybar/source/TopLevelClass")));
     }
 
     static String md5Hex(String input) throws NoSuchAlgorithmException {
