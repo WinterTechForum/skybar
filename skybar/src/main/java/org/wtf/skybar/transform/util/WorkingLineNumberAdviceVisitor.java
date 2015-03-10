@@ -1,6 +1,7 @@
 package org.wtf.skybar.transform.util;
 
 import org.objectweb.asm.*;
+import org.objectweb.asm.commons.AdviceAdapter;
 
 /**
  *
@@ -11,10 +12,10 @@ import org.objectweb.asm.*;
  * Adding code straight after LINE, but before frame usually causes problems with verifiers.
  * Also make sure onLineNumber is called AFTER any NEW operator, since the preceding LABEL is used to identify the uninitialized
  */
-public class WorkingLineNumberVisitor extends MethodVisitor implements Opcodes{
+public class WorkingLineNumberAdviceVisitor extends AdviceAdapter implements Opcodes{
 
-    public WorkingLineNumberVisitor(int api, MethodVisitor mv) {
-        super(api, mv);
+    public WorkingLineNumberAdviceVisitor(int api, MethodVisitor mv, int access, String name, String desc) {
+        super(api, mv, access, name, desc);
     }
 
     private int lineNumber;
@@ -43,7 +44,7 @@ public class WorkingLineNumberVisitor extends MethodVisitor implements Opcodes{
         }
     }
 
-    protected void onLineNumber(int lineNumber) {}
+    protected void onLineNumber(int lineNumber) {};
 
     @Override
     public void visitIntInsn(int opcode, int operand) {

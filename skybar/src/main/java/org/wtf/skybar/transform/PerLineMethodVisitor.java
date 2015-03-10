@@ -5,28 +5,28 @@ import org.objectweb.asm.MethodVisitor;
 import org.objectweb.asm.Opcodes;
 import org.objectweb.asm.Type;
 import org.wtf.skybar.registry.SkybarRegistry;
+import org.wtf.skybar.transform.util.WorkingLineNumberVisitor;
 
 import java.lang.invoke.CallSite;
 import java.lang.invoke.MethodHandles;
 import java.lang.invoke.MethodType;
 
 /**
- *
+ * Inserts instrumentation to update the SkybarRegistry on each line number.
  */
-public class PerLineInstrumentation implements SkybarInstrumentation, Opcodes {
+class PerLineMethodVisitor extends WorkingLineNumberVisitor {
 
-    private final MethodVisitor mv;
-    private final String sourceFile;
     private final int version;
+    private final String sourceFile;
 
-    public PerLineInstrumentation(MethodVisitor methodVisitor, String sourceFile, int version) {
-        this.mv = methodVisitor;
-        this.sourceFile = sourceFile;
+    public PerLineMethodVisitor(int version, String sourceFile, MethodVisitor mv) {
+        super(ASM5, mv);
         this.version = version;
+        this.sourceFile = sourceFile;
     }
 
     @Override
-    public void onLineNumber(int lineNumber) {
+    protected void onLineNumber(int lineNumber) {
         SkybarRegistry.registry.registerLine(sourceFile, lineNumber);
 
         if(useInvokeDynamic()) {
@@ -46,12 +46,13 @@ public class PerLineInstrumentation implements SkybarInstrumentation, Opcodes {
         }
     }
 
-    @Override
-    public void visitMaxs(int maxStack, int maxLocals) {
-        mv.visitMaxs(maxStack + 3, maxLocals);
-    }
-
     private boolean useInvokeDynamic() {
         return version != Opcodes.V1_1 && version >= Opcodes.V1_7;
+    }
+
+    @Override
+    public void visitMaxs(int maxStack, int maxLocals) {
+        int ms = useInvokeDynamic() ? maxStack : maxStack + 3;
+        mv.visitMaxs(ms, maxLocals);
     }
 }
