@@ -72,21 +72,7 @@ class TryCatchMethodVisitor extends WorkingLineNumberVisitor {
         if(entered) {
             mv.visitIincInsn(lineNumberLocals.get(lineNumber), 1);
         } else {
-            if(useInvokeDynamic()) {
-                MethodType mt = MethodType.methodType(CallSite.class, MethodHandles.Lookup.class, String.class, MethodType.class, String.class, int.class);
-
-                Handle bootstrap = new Handle(Opcodes.H_INVOKESTATIC, Type.getInternalName(SkybarRegistry.class), "bootstrap",
-                        mt.toMethodDescriptorString());
-                mv.visitInvokeDynamicInsn("visitLine", "()V", bootstrap, sourceFile, lineNumber);
-            } else {
-                mv.visitFieldInsn(GETSTATIC, "org/wtf/skybar/registry/SkybarRegistry", "registry", "Lorg/wtf/skybar/registry/SkybarRegistry;");
-                mv.visitLdcInsn(sourceFile);
-                mv.visitLdcInsn(lineNumber);
-                mv.visitMethodInsn(INVOKEVIRTUAL, "org/wtf/skybar/registry/SkybarRegistry", "getAdderForLine", "(Ljava/lang/String;I)Ljava/util/concurrent/atomic/LongAdder;", false);
-                mv.visitInsn(LCONST_1);
-                mv.visitMethodInsn(INVOKEVIRTUAL, "java/util/concurrent/atomic/LongAdder", "add", "(J)V", false);
-
-            }
+           PerLineMethodVisitor.reportSingleLineExecuted(lineNumber, sourceFile, version, mv);
         }
     }
 

@@ -29,7 +29,11 @@ class PerLineMethodVisitor extends WorkingLineNumberVisitor {
     protected void onLineNumber(int lineNumber) {
         SkybarRegistry.registry.registerLine(sourceFile, lineNumber);
 
-        if(useInvokeDynamic()) {
+        reportSingleLineExecuted(lineNumber, sourceFile, version, mv);
+    }
+
+    public static void reportSingleLineExecuted(int lineNumber, String sourceFile, int version, MethodVisitor mv) {
+        if(useInvokeDynamic(version)) {
             MethodType mt = MethodType.methodType(CallSite.class, MethodHandles.Lookup.class, String.class, MethodType.class, String.class, int.class);
 
             Handle bootstrap = new Handle(Opcodes.H_INVOKESTATIC, Type.getInternalName(SkybarRegistry.class), "bootstrap",
@@ -46,13 +50,13 @@ class PerLineMethodVisitor extends WorkingLineNumberVisitor {
         }
     }
 
-    private boolean useInvokeDynamic() {
+    private static boolean useInvokeDynamic(int version) {
         return version != Opcodes.V1_1 && version >= Opcodes.V1_7;
     }
 
     @Override
     public void visitMaxs(int maxStack, int maxLocals) {
-        int ms = useInvokeDynamic() ? maxStack : maxStack + 3;
+        int ms = useInvokeDynamic(version) ? maxStack : maxStack + 3;
         mv.visitMaxs(ms, maxLocals);
     }
 }
