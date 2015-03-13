@@ -1,11 +1,11 @@
 package org.wtf.skybar.transform;
 
 import org.objectweb.asm.*;
+import org.objectweb.asm.commons.LocalVariablesSorter;
 import org.objectweb.asm.tree.AbstractInsnNode;
 import org.objectweb.asm.tree.InsnList;
 import org.objectweb.asm.tree.LineNumberNode;
 import org.wtf.skybar.registry.SkybarRegistry;
-import org.wtf.skybar.transform.util.WorkingLineNumberAdviceVisitor;
 import org.wtf.skybar.transform.util.WorkingLineNumberVisitor;
 
 import java.lang.invoke.CallSite;
@@ -19,12 +19,16 @@ import java.util.Map;
 /**
  * Inserts instrumentation to update the SkybarRegistry on each method exit. Line visits are tracked as increments of local variables.
  */
-class TryCatchMethodVisitor extends WorkingLineNumberAdviceVisitor {
+class TryCatchMethodVisitor extends WorkingLineNumberVisitor {
 
     private final String className;
     private final int version;
+    private final int access;
+    private final String desc;
     private final String sourceFile;
+    private final MethodVisitor mv;
     private final InsnList instructions;
+    private final LocalVariablesSorter localVariablesSorter;
 
     private Map<Integer, Integer> lineNumberLocals = new HashMap<>();
     private Label tryStart;
@@ -33,19 +37,23 @@ class TryCatchMethodVisitor extends WorkingLineNumberAdviceVisitor {
     private boolean entered;
 
 
-    public TryCatchMethodVisitor(String className, int version, String sourceFile, int access, String name, String desc, MethodVisitor mv, InsnList instructions) {
-        super(ASM5, mv, access, name, desc);
+    public TryCatchMethodVisitor(String className, int version, int access, String desc, String sourceFile, MethodVisitor mv, InsnList instructions, LocalVariablesSorter localVariablesSorter) {
+        super(ASM5, localVariablesSorter);
         this.className = className;
         this.version = version;
+        this.access = access;
+        this.desc = desc;
         this.sourceFile = sourceFile;
+        this.mv = mv;
         this.instructions = instructions;
+        this.localVariablesSorter = localVariablesSorter;
     }
 
     @Override
     protected void onMethodEnter() {
-        entered = true;
+
         getNodesOfType(LineNumberNode.class).forEach(node -> {
-            int lineNumberLocal = newLocal(Type.INT_TYPE);
+            int lineNumberLocal = localVariablesSorter.newLocal(Type.INT_TYPE);
             lineNumberLocals.put(node.line, lineNumberLocal);
             superVisitInsn(Opcodes.ICONST_0);
             mv.visitVarInsn(Opcodes.ISTORE, lineNumberLocal);
@@ -54,7 +62,9 @@ class TryCatchMethodVisitor extends WorkingLineNumberAdviceVisitor {
         tryEnd = new Label();
         catchHandler = new Label();
         mv.visitLabel(tryStart);
+        entered = true;
     }
+
 
     @Override
     protected void onLineNumber(int lineNumber) {
@@ -120,14 +130,19 @@ class TryCatchMethodVisitor extends WorkingLineNumberAdviceVisitor {
 
     @Override
     public void visitMaxs(int maxStack, int maxLocals) {
+        instrumentCatchHandler();
+        super.visitMaxs(maxStack + 3, maxLocals + getNodesOfType(LineNumberNode.class).size());
+    }
+
+    private void instrumentCatchHandler() {
         mv.visitTryCatchBlock(tryStart, tryEnd, catchHandler, null);
         mv.visitLabel(tryEnd);
         mv.visitLabel(catchHandler);
         List<Object> locals = new ArrayList<>();
-        if((Opcodes.ACC_STATIC & methodAccess) == 0) {
+        if((Opcodes.ACC_STATIC & access) == 0) {
             locals.add(getLocalObjectFor(Type.getObjectType(className)));
         }
-        Type[] argumentTypes = Type.getArgumentTypes(methodDesc);
+        Type[] argumentTypes = Type.getArgumentTypes(desc);
         for (Type argumentType : argumentTypes) {
             Object t = getLocalObjectFor(argumentType);
             locals.add(t);
@@ -135,7 +150,6 @@ class TryCatchMethodVisitor extends WorkingLineNumberAdviceVisitor {
         super.visitFrame(Opcodes.F_NEW, locals.size(), locals.toArray(new Object[locals.size()]), 1, new Object[]{"java/lang/Throwable"});
         reportLinesExecuted();
         mv.visitInsn(ATHROW);
-        super.visitMaxs(maxStack + 3, maxLocals + getNodesOfType(LineNumberNode.class).size());
     }
 
     private Object getLocalObjectFor(Type argumentType) {
@@ -172,7 +186,7 @@ class TryCatchMethodVisitor extends WorkingLineNumberAdviceVisitor {
         List<T> nodes = new ArrayList<>();
 
         for(int i = 0; i < instructions.size(); i++) {
-            if(instructions.get(i) instanceof LineNumberNode) {
+            if (instructions.get(i) instanceof LineNumberNode) {
                 nodes.add(type.cast(instructions.get(i)));
             }
         }

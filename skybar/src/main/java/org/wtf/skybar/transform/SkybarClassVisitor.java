@@ -4,6 +4,7 @@ import org.objectweb.asm.ClassVisitor;
 import org.objectweb.asm.Label;
 import org.objectweb.asm.MethodVisitor;
 import org.objectweb.asm.Opcodes;
+import org.objectweb.asm.commons.LocalVariablesSorter;
 import org.objectweb.asm.tree.AbstractInsnNode;
 import org.objectweb.asm.tree.JumpInsnNode;
 import org.objectweb.asm.tree.LabelNode;
@@ -55,12 +56,17 @@ class SkybarClassVisitor extends ClassVisitor implements Opcodes {
         @Override
         public void visitEnd() {
             super.visitEnd();
-            if (hasLoops()) {
-                accept(new TryCatchMethodVisitor(className, version, sourceFile, access, name, desc, mv, instructions));
+            if (hasLoops() && !isConstructor(name)) {
+                LocalVariablesSorter localVariablesSorter = new LocalVariablesSorter(access, desc, mv);
+                accept(new TryCatchMethodVisitor(className, version, access, desc, sourceFile, mv, instructions, localVariablesSorter));
             } else {
                 accept(new PerLineMethodVisitor(version, sourceFile, mv));
             }
 
+        }
+
+        private boolean isConstructor(String name) {
+            return "<init>".equals(name);
         }
 
         private boolean hasLoops() {

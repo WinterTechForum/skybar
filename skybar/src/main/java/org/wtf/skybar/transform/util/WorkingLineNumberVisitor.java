@@ -27,8 +27,33 @@ public class WorkingLineNumberVisitor extends MethodVisitor implements Opcodes{
 
     @Override
     public void visitInsn(int opcode) {
+        switch (opcode) {
+            case RETURN:
+            case IRETURN:
+            case FRETURN:
+            case ARETURN:
+            case LRETURN:
+            case DRETURN:
+            case ATHROW:
+                onMethodExit(opcode);
+                break;
+        }
         checkLineNumber();
         super.visitInsn(opcode);
+    }
+
+    protected void onMethodExit(int opcode) {
+
+    }
+
+    @Override
+    public void visitCode() {
+        super.visitCode();
+        onMethodEnter();
+    }
+
+    protected void onMethodEnter() {
+
     }
 
     public void superVisitInsn(int opcode) {
