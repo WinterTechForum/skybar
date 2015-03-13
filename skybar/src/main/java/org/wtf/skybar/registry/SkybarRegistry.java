@@ -63,7 +63,7 @@ public class SkybarRegistry {
             String sourceName = sourceLines.getKey();
             Map<Integer, LongAdder> currentLines = sourceLines.getValue();
 
-            Map<Integer, Long> prevLines = prev.get(sourceName);
+            IntLongMap prevLines = prev.get(sourceName);
 
 
             if(prevLines == null) {
@@ -74,8 +74,8 @@ public class SkybarRegistry {
             } else {
                 currentLines.forEach((lnum, adder) -> {
                     long count = adder.longValue();
-                    Long prevCount = prevLines.get(lnum);
-                    long diff = count - (prevCount == null ? 0 : prevCount);
+                    long prevCount = prevLines.getOrDefault(lnum.intValue(), 0l);
+                    long diff = count - prevCount;
                     if(diff > 0) {
                         IntLongMap deltaForSource = delta.get(sourceName);
                         if(deltaForSource == null) {
