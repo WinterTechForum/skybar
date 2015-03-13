@@ -15,6 +15,7 @@ subprojects {
 defaultTasks 'clean', 'build', 'shadowJar'
 
 ext.deps = [
+    slf4j: '1.7.10',
     jetty: '9.2.9.v20150224'
 ]
 

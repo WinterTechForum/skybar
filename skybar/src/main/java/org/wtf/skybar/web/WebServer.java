@@ -20,12 +20,10 @@ import org.eclipse.jetty.util.resource.ResourceCollection;
 import org.eclipse.jetty.util.thread.QueuedThreadPool;
 import org.eclipse.jetty.util.thread.ScheduledExecutorScheduler;
 import org.eclipse.jetty.util.thread.Scheduler;
-import org.eclipse.jetty.util.thread.ThreadPool;
 import org.eclipse.jetty.websocket.server.WebSocketHandler;
 import org.eclipse.jetty.websocket.servlet.WebSocketServletFactory;
 import org.wtf.skybar.registry.SkybarRegistry;
 import org.wtf.skybar.time.RegistryUpdateListeners;
-
 
 public class WebServer {
     private Server server;
@@ -33,6 +31,11 @@ public class WebServer {
     private final int port;
     private final String sourcePath;
 
+    /**
+     * @param registry   registry to use for listeners
+     * @param port       port to listen on, or 0 to use an available port
+     * @param sourcePath where to load source from
+     */
     public WebServer(SkybarRegistry registry, int port, String sourcePath) {
         this.registry = registry;
         this.port = port;
@@ -40,8 +43,8 @@ public class WebServer {
     }
 
     /**
-     * @return port which server started on. Will be different than configured port when port 0 is used, which is
-     * in tests.
+     * @return port which server started on. Will be different than configured port when port 0 is used, which is in
+     * tests.
      */
     public int start() {
         try {
@@ -52,7 +55,8 @@ public class WebServer {
             Scheduler scheduler = new ScheduledExecutorScheduler(null, true);
             HttpConnectionFactory httpConnectionFactory = new HttpConnectionFactory();
 
-            ServerConnector connector = new ServerConnector(server, null, scheduler, null, -1, -1, httpConnectionFactory);
+            ServerConnector connector =
+                    new ServerConnector(server, null, scheduler, null, -1, -1, httpConnectionFactory);
             connector.setPort(port);
             server.addConnector(connector);
 
@@ -89,7 +93,7 @@ public class WebServer {
             RegistryUpdateListeners timer = new RegistryUpdateListeners(registry);
             server.addLifeCycleListener(timer);
             timer.start();
-            
+
             server.setHandler(handlers);
             server.start();
 
@@ -108,7 +112,6 @@ public class WebServer {
         } else {
             bases.add(Resource.newClassPathResource("/org/wtf/skybar/web/"));
         }
-
 
         Collections.list(getClass().getClassLoader().getResources("META-INF/resources/"))
                 .forEach(url -> bases.add(Resource.newResource(url)));
@@ -138,4 +141,5 @@ public class WebServer {
             throw new RuntimeException(e);
         }
     }
+
 }
