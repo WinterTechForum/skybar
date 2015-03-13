@@ -90,12 +90,6 @@ class TryCatchMethodVisitor extends WorkingLineNumberVisitor {
         }
     }
 
-
-    @Override
-    public void visitFrame(int type, int nLocal, Object[] local, int nStack, Object[] stack) {
-        super.visitFrame(type, nLocal, local, nStack, stack);
-    }
-
     @Override
     protected void onMethodExit(int opcode) {
         reportLinesExecuted();
