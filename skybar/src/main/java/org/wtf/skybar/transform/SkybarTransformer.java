@@ -1,13 +1,16 @@
 package org.wtf.skybar.transform;
 
+import java.io.PrintWriter;
 import java.lang.instrument.ClassFileTransformer;
 import java.lang.instrument.IllegalClassFormatException;
 import java.security.ProtectionDomain;
 import java.util.regex.Pattern;
 import org.objectweb.asm.ClassReader;
+import org.objectweb.asm.ClassVisitor;
 import org.objectweb.asm.ClassWriter;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.objectweb.asm.util.TraceClassVisitor;
 
 public class SkybarTransformer implements ClassFileTransformer {
     private static final Logger logger = LoggerFactory.getLogger(SkybarTransformer.class);
@@ -26,10 +29,24 @@ public class SkybarTransformer implements ClassFileTransformer {
             logger.debug("Instrumenting " + className);
             ClassReader reader = new ClassReader(bytes);
             ClassWriter writer = new ClassWriter(reader, 0);
-            reader.accept(new SkybarClassVisitor(writer), ClassReader.EXPAND_FRAMES);
+            ClassVisitor visitor = writer;
+            if(shouldTrace()) {
+                visitor = new TraceClassVisitor(writer, new PrintWriter(System.out));
+                System.out.println("Unchanged bytecode: ");
+                reader.accept(new TraceClassVisitor(new PrintWriter(System.out)), ClassReader.EXPAND_FRAMES);
+            }
+            try {
+                reader.accept(new SkybarClassVisitor(visitor), ClassReader.EXPAND_FRAMES);
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
             return writer.toByteArray();
         }
         return bytes;
+    }
+
+    private boolean shouldTrace() {
+        return false;
     }
 
     private boolean shouldInstrument(String className, ClassLoader loader, byte[] bytes) {

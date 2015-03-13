@@ -36,7 +36,7 @@ public class SkybarRegistry {
     public void registerLine(String sourceName, int lineNumber) {
         Map<Integer, LongAdder> lines = visits.get(sourceName);
         if(lines == null) {
-            Map<Integer, LongAdder> newLines = new HashMap<>();
+            Map<Integer, LongAdder> newLines = new ConcurrentHashMap<>();
             Map<Integer, LongAdder> existingLines = visits.putIfAbsent(sourceName, newLines);
             lines = existingLines != null ? existingLines : newLines;
         }
@@ -138,6 +138,15 @@ public class SkybarRegistry {
                 .bindTo(adder);
 
         return new ConstantCallSite(MethodHandles.insertArguments(add, 0, 1l).asType(type));
+    }
+
+    public static CallSite bootstrapMulti(MethodHandles.Lookup lookup, String name, MethodType type, String sourceName, int lineNumber) throws NoSuchMethodException, IllegalAccessException {
+        LongAdder adder = registry.getAdderForLine(sourceName, lineNumber);
+        MethodHandle add = lookup
+                .findVirtual(LongAdder.class, "add", MethodType.methodType(void.class, new Class[]{long.class}))
+                .bindTo(adder);
+
+        return new ConstantCallSite(add.asType(type));
     }
 
     /**
