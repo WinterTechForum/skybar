@@ -47,13 +47,12 @@ public final class SkybarStressTool {
         SplittableRandom rand = new SplittableRandom(seed);
 
         int numLinesToRegister = 2000;
-        long[] indexes = new long[numLinesToRegister];
+
         int numVisitThreads = 2;
 
         for (int i = 0; i < numLinesToRegister; i++) {
             String sourceName = "file " + i % 10;
-            long index = r.registerLine(sourceName, i);
-            indexes[i] = index;
+            r.registerLine(sourceName, i);
         }
 
         AtomicInteger numFutures = new AtomicInteger();
@@ -66,9 +65,10 @@ public final class SkybarStressTool {
                 SplittableRandom visitRand = rand.split();
                 while (true) {
                     // get a random entry. Increment after get when writing, so need to decrement here
-                    long index = indexes[visitRand.nextInt(numLinesToRegister)];
+                    int line = visitRand.nextInt(numLinesToRegister);
 
-                    r.visitLine(index);
+                    String sourceName = "file " + line % 10;
+                    r.getAdderForLine(sourceName, line);
 
                     if (Thread.currentThread().isInterrupted()) {
                         return;

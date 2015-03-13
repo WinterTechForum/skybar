@@ -8,6 +8,6 @@ import org.wtf.skybar.registry.SkybarRegistry;
 public class HelloWorld {
 
     public static void main(String[] args) {
-        SkybarRegistry.registry.visitLine(1);
+        SkybarRegistry.registry.registerLine("foo", 1);
     }
 }

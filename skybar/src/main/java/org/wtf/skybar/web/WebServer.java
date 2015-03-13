@@ -5,6 +5,7 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+import java.util.Optional;
 
 import org.eclipse.jetty.server.AbstractConnectionFactory;
 import org.eclipse.jetty.server.HttpConnectionFactory;
@@ -101,9 +102,9 @@ public class WebServer {
     private ResourceCollection getBaseResource() throws IOException {
         List<Resource> bases = new ArrayList<>();
 
-        File source = new File("src/main/resources/org/wtf/skybar/web");
-        if(source.exists()) {
-            bases.add(Resource.newResource(source));
+        Optional<File> skybarHome = findSkybarHome();
+        if(skybarHome.isPresent()) {
+            bases.add(Resource.newResource(skybarHome.get()));
         } else {
             bases.add(Resource.newClassPathResource("/org/wtf/skybar/web/"));
         }
@@ -113,6 +114,21 @@ public class WebServer {
                 .forEach(url -> bases.add(Resource.newResource(url)));
 
         return new ResourceCollection(bases.toArray(new Resource[bases.size()]));
+    }
+
+    private Optional<File> findSkybarHome() {
+        String home = System.getProperty("skybar.home");
+        if(home != null) {
+            File source = new File(home, "skybar/src/main/resources/org/wtf/skybar/web");
+            if (source.exists()) {
+                try {
+                    return Optional.of(source.getCanonicalFile());
+                } catch (IOException e) {
+                    throw new RuntimeException(e);
+                }
+            }
+        }
+        return Optional.empty();
     }
 
     public void stop() {
