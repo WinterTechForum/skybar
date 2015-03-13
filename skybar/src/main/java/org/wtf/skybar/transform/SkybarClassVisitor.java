@@ -7,6 +7,7 @@ import org.objectweb.asm.Opcodes;
 class SkybarClassVisitor extends ClassVisitor implements Opcodes{
     private String className;
     private String sourceFile;
+    private int version;
 
     public SkybarClassVisitor(ClassVisitor writer) {
         super(ASM5, writer);
@@ -16,6 +17,7 @@ class SkybarClassVisitor extends ClassVisitor implements Opcodes{
     public void visit(int version, int access, String name, String signature, String superName, String[] interfaces) {
         super.visit(version, access, name, signature, superName, interfaces);
         this.className = name;
+        this.version = version;
     }
 
     @Override
@@ -26,6 +28,6 @@ class SkybarClassVisitor extends ClassVisitor implements Opcodes{
 
     @Override
     public MethodVisitor visitMethod(int access, String name, String desc, String signature, String[] exceptions) {
-        return new SkybarMethodVisitor(sourceFile, super.visitMethod(access, name, desc, signature, exceptions));
+        return new SkybarMethodVisitor(sourceFile, version, super.visitMethod(access, name, desc, signature, exceptions));
     }
 }
