@@ -15,6 +15,9 @@ import java.lang.invoke.MethodHandles;
 import java.lang.invoke.MethodType;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.atomic.LongAdder;
+
+import static org.objectweb.asm.Type.*;
 
 /**
  * Inserts instrumentation to update the SkybarRegistry on each method exit. Line visits are tracked as increments of local variables.
@@ -84,20 +87,42 @@ class TryCatchMethodVisitor extends WorkingLineNumberVisitor {
     private void reportLinesExecuted() {
         getNodesOfType(LineNumberNode.class).forEach(node -> {
             if (useInvokeDynamic()) {
-                MethodType mt = MethodType.methodType(CallSite.class, MethodHandles.Lookup.class, String.class, MethodType.class, String.class, int.class);
 
-                Handle bootstrap = new Handle(Opcodes.H_INVOKESTATIC, Type.getInternalName(SkybarRegistry.class), "bootstrapMulti",
-                        mt.toMethodDescriptorString());
+                // The invokedynamic byte code points to a bootstrap method used by the JVM to look up the call site method at the first executions.
+                // Subsequent calls are direct and optimized
+
+                // Need a descriptor for the bootstrap method (return type + parameter types)
+                String descriptor = MethodType.methodType(CallSite.class, MethodHandles.Lookup.class, String.class, MethodType.class, String.class, int.class)
+                        .toMethodDescriptorString();
+
+                // and a handle
+                Handle bootstrap = new Handle(Opcodes.H_INVOKESTATIC, getInternalName(SkybarRegistry.class), "bootstrapMulti",
+                        descriptor);
+
+                // Load the local variable holding the execution count for the line
                 mv.visitVarInsn(ILOAD, lineNumberLocals.get(node.line));
+                // LongAdder expects a long
                 mv.visitInsn(I2L);
+                // Pass sourceFile and lineNumber as the "extra" arguments to the bootstrap method
                 mv.visitInvokeDynamicInsn("visitLine", "(J)V", bootstrap, sourceFile, node.line);
             } else {
-                mv.visitFieldInsn(GETSTATIC, "org/wtf/skybar/registry/SkybarRegistry", "registry", "Lorg/wtf/skybar/registry/SkybarRegistry;");
+                // Slower, but compatible with Java <= 1.6
+                // We output the byte code equivalent to:
+                //    SkybarRegistry.registry.getAdderForLine(sourceFile, lineNumber).add(numExecutionsOfLineX)
+
+
+                // Get the SkyBarRegistry instance onto the stack
+                mv.visitFieldInsn(GETSTATIC, getInternalName(SkybarRegistry.class), "registry", getDescriptor(SkybarRegistry.class));
+                // Add source file and line number
                 mv.visitLdcInsn(sourceFile);
                 mv.visitLdcInsn(node.line);
-                mv.visitMethodInsn(INVOKEVIRTUAL, "org/wtf/skybar/registry/SkybarRegistry", "getAdderForLine", "(Ljava/lang/String;I)Ljava/util/concurrent/atomic/LongAdder;", false);
+                // Get the LongAdder
+                mv.visitMethodInsn(INVOKEVIRTUAL, getInternalName(SkybarRegistry.class), "getAdderForLine", getMethodDescriptor(getType(LongAdder.class), getType(String.class), Type.INT_TYPE), false);
+                // Load the execution count for the line
                 mv.visitVarInsn(ILOAD, lineNumberLocals.get(node.line));
+                // LongAdder expects a long
                 mv.visitInsn(I2L);
+                // Invoke the add method
                 mv.visitMethodInsn(INVOKEVIRTUAL, "java/util/concurrent/atomic/LongAdder", "add", "(J)V", false);
 
             }
