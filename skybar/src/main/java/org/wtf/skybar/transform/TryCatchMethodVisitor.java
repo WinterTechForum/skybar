@@ -1,5 +1,7 @@
 package org.wtf.skybar.transform;
 
+import net.openhft.koloboke.collect.map.IntIntMap;
+import net.openhft.koloboke.collect.map.hash.HashIntIntMaps;
 import org.objectweb.asm.*;
 import org.objectweb.asm.commons.LocalVariablesSorter;
 import org.objectweb.asm.tree.AbstractInsnNode;
@@ -12,9 +14,7 @@ import java.lang.invoke.CallSite;
 import java.lang.invoke.MethodHandles;
 import java.lang.invoke.MethodType;
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 
 /**
  * Inserts instrumentation to update the SkybarRegistry on each method exit. Line visits are tracked as increments of local variables.
@@ -30,7 +30,7 @@ class TryCatchMethodVisitor extends WorkingLineNumberVisitor {
     private final InsnList instructions;
     private final LocalVariablesSorter localVariablesSorter;
 
-    private Map<Integer, Integer> lineNumberLocals = new HashMap<>();
+    private IntIntMap lineNumberLocals = HashIntIntMaps.newMutableMap();
     private Label tryStart;
     private Label tryEnd;
     private Label catchHandler;
