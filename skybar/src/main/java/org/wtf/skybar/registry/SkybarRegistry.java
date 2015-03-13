@@ -36,7 +36,7 @@ public class SkybarRegistry {
     public void registerLine(String sourceName, int lineNumber) {
         Map<Integer, LongAdder> lines = visits.get(sourceName);
         if(lines == null) {
-            Map<Integer, LongAdder> newLines = new HashMap<>();
+            Map<Integer, LongAdder> newLines = new ConcurrentHashMap<>();
             Map<Integer, LongAdder> existingLines = visits.putIfAbsent(sourceName, newLines);
             lines = existingLines != null ? existingLines : newLines;
         }
