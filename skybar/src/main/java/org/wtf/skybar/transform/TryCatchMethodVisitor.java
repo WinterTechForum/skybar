@@ -56,10 +56,12 @@ class TryCatchMethodVisitor extends WorkingLineNumberVisitor {
     protected void onMethodEnter() {
 
         getNodesOfType(LineNumberNode.class).forEach(node -> {
-            int lineNumberLocal = localVariablesSorter.newLocal(Type.INT_TYPE);
-            lineNumberLocals.put(node.line, lineNumberLocal);
-            superVisitInsn(Opcodes.ICONST_0);
-            mv.visitVarInsn(Opcodes.ISTORE, lineNumberLocal);
+            if(!lineNumberLocals.containsKey(node.line)) {
+                int lineNumberLocal = localVariablesSorter.newLocal(Type.INT_TYPE);
+                lineNumberLocals.put(node.line, lineNumberLocal);
+                superVisitInsn(Opcodes.ICONST_0);
+                mv.visitVarInsn(Opcodes.ISTORE, lineNumberLocal);
+            }
         });
         tryStart = new Label();
         tryEnd = new Label();
@@ -85,7 +87,7 @@ class TryCatchMethodVisitor extends WorkingLineNumberVisitor {
     }
 
     private void reportLinesExecuted() {
-        getNodesOfType(LineNumberNode.class).forEach(node -> {
+        lineNumberLocals.keySet().forEach((int line) -> {
             if (useInvokeDynamic()) {
 
                 // The invokedynamic byte code points to a bootstrap method used by the JVM to look up the call site method at the first executions.
@@ -100,11 +102,11 @@ class TryCatchMethodVisitor extends WorkingLineNumberVisitor {
                         descriptor);
 
                 // Load the local variable holding the execution count for the line
-                mv.visitVarInsn(ILOAD, lineNumberLocals.get(node.line));
+                mv.visitVarInsn(ILOAD, lineNumberLocals.get(line));
                 // LongAdder expects a long
                 mv.visitInsn(I2L);
                 // Pass sourceFile and lineNumber as the "extra" arguments to the bootstrap method
-                mv.visitInvokeDynamicInsn("visitLine", "(J)V", bootstrap, sourceFile, node.line);
+                mv.visitInvokeDynamicInsn("visitLine", "(J)V", bootstrap, sourceFile, line);
             } else {
                 // Slower, but compatible with Java <= 1.6
                 // We output the byte code equivalent to:
@@ -115,11 +117,11 @@ class TryCatchMethodVisitor extends WorkingLineNumberVisitor {
                 mv.visitFieldInsn(GETSTATIC, getInternalName(SkybarRegistry.class), "registry", getDescriptor(SkybarRegistry.class));
                 // Add source file and line number
                 mv.visitLdcInsn(sourceFile);
-                mv.visitLdcInsn(node.line);
+                mv.visitLdcInsn(line);
                 // Get the LongAdder
                 mv.visitMethodInsn(INVOKEVIRTUAL, getInternalName(SkybarRegistry.class), "getAdderForLine", getMethodDescriptor(getType(LongAdder.class), getType(String.class), Type.INT_TYPE), false);
                 // Load the execution count for the line
-                mv.visitVarInsn(ILOAD, lineNumberLocals.get(node.line));
+                mv.visitVarInsn(ILOAD, lineNumberLocals.get(line));
                 // LongAdder expects a long
                 mv.visitInsn(I2L);
                 // Invoke the add method
