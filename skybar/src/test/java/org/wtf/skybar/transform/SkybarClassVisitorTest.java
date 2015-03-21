@@ -193,17 +193,6 @@ public class SkybarClassVisitorTest {
         }, lineNums.length);
     }
 
-    @SuppressWarnings("unchecked")
-    private static ConcurrentMap<String, Map<Integer, LongAdder>> getVisits() {
-        try {
-            Field visits = SkybarRegistry.class.getDeclaredField("visits");
-            visits.setAccessible(true);
-            return (ConcurrentMap<String, Map<Integer, LongAdder>>) visits.get(SkybarRegistry.registry);
-        } catch (NoSuchFieldException | IllegalAccessException e) {
-            throw new RuntimeException(e);
-        }
-    }
-
     private static IntLongMap linesOf(Class<?> clazz) {
         SkybarRegistry.DeltaListener deltaListener = (x) -> {
         };
