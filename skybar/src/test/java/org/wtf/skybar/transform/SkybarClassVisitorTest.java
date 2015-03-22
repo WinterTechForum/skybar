@@ -119,7 +119,7 @@ public class SkybarClassVisitorTest {
 
         invokeStaticMethod(clazz, "foo");
 
-        assertCounts(clazz, linesWithSingleCounts(9, 10, 11, 14));
+        assertCounts(clazz, linesWithSingleCounts(9, 10, 11, 12, 14));
     }
 
     @Test
