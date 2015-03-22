@@ -1,13 +1,12 @@
 package org.wtf.skybar.transform;
 
+import com.palominolabs.http.url.PercentDecoder;
 import java.io.File;
 import java.io.IOException;
 import java.io.PrintWriter;
-import java.io.UnsupportedEncodingException;
 import java.lang.reflect.InvocationTargetException;
-import java.net.URLDecoder;
+import java.nio.charset.CharacterCodingException;
 import java.nio.charset.Charset;
-import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.util.HashMap;
 import java.util.List;
@@ -33,6 +32,7 @@ import org.wtf.skybar.transform.testcases.StaticOneLiner;
 import org.wtf.skybar.transform.testcases.TryWithResources;
 import org.wtf.skybar.transform.testcases.WhileLoop;
 
+import static java.nio.charset.StandardCharsets.UTF_8;
 import static org.hamcrest.CoreMatchers.equalTo;
 import static org.junit.Assert.assertThat;
 
@@ -218,9 +218,9 @@ public class SkybarClassVisitorTest {
 
         File root;
         try {
-            root = new File(URLDecoder.decode(clazz.getResource("/").getFile(), StandardCharsets.UTF_8.name()));
-        } catch (UnsupportedEncodingException e) {
-            throw new RuntimeException("Impossible; UTF-8 always exists", e);
+            root = new File(new PercentDecoder(UTF_8.newDecoder()).decode(clazz.getResource("/").getFile()));
+        } catch (CharacterCodingException e) {
+            throw new RuntimeException("Couldn't decode", e);
         }
         File source = new File(root, path);
         while(root.getParentFile() != null && !source.exists()) {
