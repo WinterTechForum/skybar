@@ -1,6 +1,7 @@
 package org.wtf.skybar.transform;
 
 import java.io.IOException;
+import java.io.PrintWriter;
 import java.lang.reflect.InvocationTargetException;
 import java.util.HashMap;
 import java.util.Map;
@@ -8,7 +9,9 @@ import net.openhft.koloboke.collect.map.IntLongMap;
 import net.openhft.koloboke.collect.map.hash.HashIntLongMaps;
 import org.junit.Test;
 import org.objectweb.asm.ClassReader;
+import org.objectweb.asm.ClassVisitor;
 import org.objectweb.asm.ClassWriter;
+import org.objectweb.asm.util.TraceClassVisitor;
 import org.wtf.skybar.registry.SkybarRegistry;
 import org.wtf.skybar.transform.testcases.Conditional;
 import org.wtf.skybar.transform.testcases.ConstructorOneLiner;
@@ -68,7 +71,7 @@ public class SkybarClassVisitorTest {
     public void shouldCountStaticInitOneLiner() {
         Class<?> clazz = instrumentClass(StaticInitializerOneLiner.class);
 
-        assertCounts(clazz, linesWithSingleCounts(7));
+        assertCounts(clazz, map(p(7,1), p(8,1)));
     }
 
     @Test
@@ -216,9 +219,10 @@ public class SkybarClassVisitorTest {
         try {
             ClassReader reader = new ClassReader(clazz.getResourceAsStream(clazz.getSimpleName() + ".class"));
             ClassWriter writer = new ClassWriter(reader, 0);
-            reader.accept(new SkybarClassVisitor(writer), ClassReader.EXPAND_FRAMES);
+            ClassVisitor visitor = new TraceClassVisitor(writer, new PrintWriter(System.out));
+            reader.accept(new SkybarClassVisitor(visitor), ClassReader.EXPAND_FRAMES);
 
-            return new ClassLoader() {
+            return Class.forName(clazz.getName(), true, new ClassLoader() {
 
                 @Override
                 public Class<?> loadClass(String name) throws ClassNotFoundException {
@@ -233,11 +237,12 @@ public class SkybarClassVisitorTest {
                 protected Class<?> findClass(String name) throws ClassNotFoundException {
                     if (name.equals(clazz.getName())) {
                         byte[] bytes = writer.toByteArray();
-                        return defineClass(name, bytes, 0, bytes.length);
+                        Class<?> aClass = defineClass(name, bytes, 0, bytes.length);
+                        return aClass;
                     }
                     throw new ClassNotFoundException(name);
                 }
-            }.loadClass(clazz.getName());
+            });
         } catch (IOException | ClassNotFoundException e) {
             throw new RuntimeException(e);
         }
