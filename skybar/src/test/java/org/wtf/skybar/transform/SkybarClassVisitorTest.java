@@ -1,10 +1,5 @@
 package org.wtf.skybar.transform;
 
-import java.io.IOException;
-import java.io.PrintWriter;
-import java.lang.reflect.InvocationTargetException;
-import java.util.HashMap;
-import java.util.Map;
 import net.openhft.koloboke.collect.map.IntLongMap;
 import net.openhft.koloboke.collect.map.hash.HashIntLongMaps;
 import org.junit.Test;
@@ -13,21 +8,20 @@ import org.objectweb.asm.ClassVisitor;
 import org.objectweb.asm.ClassWriter;
 import org.objectweb.asm.util.TraceClassVisitor;
 import org.wtf.skybar.registry.SkybarRegistry;
-import org.wtf.skybar.transform.testcases.Conditional;
-import org.wtf.skybar.transform.testcases.ConstructorOneLiner;
-import org.wtf.skybar.transform.testcases.ExceptionCatch;
-import org.wtf.skybar.transform.testcases.ForLoop;
-import org.wtf.skybar.transform.testcases.ForLoopWithException;
-import org.wtf.skybar.transform.testcases.InstanceInitializerOneLiner;
-import org.wtf.skybar.transform.testcases.MultStatementsOnSameLine;
-import org.wtf.skybar.transform.testcases.OneLiner;
-import org.wtf.skybar.transform.testcases.StaticInitializerOneLiner;
-import org.wtf.skybar.transform.testcases.StaticOneLiner;
-import org.wtf.skybar.transform.testcases.TryWithResources;
-import org.wtf.skybar.transform.testcases.WhileLoop;
+import org.wtf.skybar.transform.testcases.*;
+
+import java.io.File;
+import java.io.IOException;
+import java.io.PrintWriter;
+import java.lang.reflect.InvocationTargetException;
+import java.net.URLDecoder;
+import java.nio.charset.Charset;
+import java.nio.file.Files;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 
 import static org.hamcrest.CoreMatchers.equalTo;
-import static org.hamcrest.CoreMatchers.is;
 import static org.junit.Assert.assertThat;
 
 public class SkybarClassVisitorTest {
@@ -43,11 +37,7 @@ public class SkybarClassVisitorTest {
             .invoke(clazz.getConstructor().newInstance());
 
         // Then
-        Map<Integer, Long> lines = linesOf(clazz);
-
-        assertThat(lines.size(), is(2));
-        assertThat(lines.get(6).longValue(), is(1l));
-        assertThat(lines.get(9).longValue(), is(1l));
+        assertCorrectSourceCount(clazz);
     }
 
     @Test
@@ -60,18 +50,14 @@ public class SkybarClassVisitorTest {
         invokeStaticMethod(clazz, "staticOneLiner");
 
         // Then
-        Map<Integer, Long> lines = linesOf(clazz);
-
-        assertThat(lines.size(), is(2));
-        assertThat(lines.get(6).longValue(), is(0l));
-        assertThat(lines.get(9).longValue(), is(1l));
+        assertCorrectSourceCount(clazz);
     }
 
     @Test
     public void shouldCountStaticInitOneLiner() {
         Class<?> clazz = instrumentClass(StaticInitializerOneLiner.class);
 
-        assertCounts(clazz, map(p(7, 1), p(8, 1)));
+        assertCorrectSourceCount(clazz);
     }
 
     @Test
@@ -80,7 +66,7 @@ public class SkybarClassVisitorTest {
         Class<?> clazz = instrumentClass(InstanceInitializerOneLiner.class);
         clazz.getConstructor().newInstance();
 
-        assertCounts(clazz, linesWithSingleCounts(3, 7, 8));
+        assertCorrectSourceCount(clazz);
     }
 
     @Test
@@ -89,7 +75,7 @@ public class SkybarClassVisitorTest {
         Class<?> clazz = instrumentClass(ConstructorOneLiner.class);
         clazz.getConstructor().newInstance();
 
-        assertCounts(clazz, linesWithSingleCounts(6, 7, 8));
+        assertCorrectSourceCount(clazz);
     }
 
     @Test
@@ -99,7 +85,7 @@ public class SkybarClassVisitorTest {
 
         invokeStaticMethod(clazz, "foo");
 
-        assertCounts(clazz, linesWithSingleCounts(5, 6, 10));
+        assertCorrectSourceCount(clazz);
     }
 
     @Test
@@ -109,7 +95,7 @@ public class SkybarClassVisitorTest {
 
         invokeStaticMethod(clazz, "foo");
 
-        assertCounts(clazz, linesWithSingleCounts(5, 7, 9, 10, 13));
+        assertCorrectSourceCount(clazz);
     }
 
     @Test
@@ -119,7 +105,7 @@ public class SkybarClassVisitorTest {
 
         invokeStaticMethod(clazz, "foo");
 
-        assertCounts(clazz, linesWithSingleCounts(9, 10, 11, 12, 14));
+        assertCorrectSourceCount(clazz);
     }
 
     @Test
@@ -129,7 +115,7 @@ public class SkybarClassVisitorTest {
 
         invokeStaticMethod(clazz, "foo");
 
-        assertCounts(clazz, map(p(7, 1), p(8, 4), p(9, 3), p(12, 1)));
+        assertCorrectSourceCount(clazz);
     }
 
     @Test
@@ -139,7 +125,7 @@ public class SkybarClassVisitorTest {
 
         invokeStaticMethod(clazz, "foo");
 
-        assertCounts(clazz, map(p(7, 1), p(8, 4), p(9, 3), p(12, 1)));
+        assertCorrectSourceCount(clazz);
     }
 
     @Test
@@ -149,7 +135,7 @@ public class SkybarClassVisitorTest {
 
         invokeStaticMethod(clazz, "foo");
 
-        assertCounts(clazz, map(p(7, 1), p(8, 1), p(10, 1)));
+        assertCorrectSourceCount(clazz);
     }
 
     @Test
@@ -159,11 +145,7 @@ public class SkybarClassVisitorTest {
 
         invokeStaticMethod(clazz, "foo");
 
-        assertCounts(clazz, map(p(7, 1), p(9, 3), p(10, 3), p(11, 1), p(13, 2), p(15, 1), p(16, 1)));
-    }
-
-    private void assertCounts(Class<?> clazz, IntLongMap counts) {
-        assertThat(nonZeroLinesOf(clazz), equalTo(counts));
+        assertCorrectSourceCount(clazz);
     }
 
     private static void invokeStaticMethod(Class<?> clazz, String methodName) throws IllegalAccessException,
@@ -171,26 +153,6 @@ public class SkybarClassVisitorTest {
         NoSuchMethodException {
         clazz.getMethod(methodName)
             .invoke(null);
-    }
-
-    private static IntLongMap map(Pair... pairs) {
-        return HashIntLongMaps.newImmutableMap((c) -> {
-            for (Pair pair : pairs) {
-                c.accept(pair.line, pair.count);
-            }
-        }, pairs.length);
-    }
-
-    private static Pair p(int line, long count) {
-        return new Pair(line, count);
-    }
-
-    private static IntLongMap linesWithSingleCounts(int... lineNums) {
-        return HashIntLongMaps.newImmutableMap((c) -> {
-            for (int lineNum : lineNums) {
-                c.accept(lineNum, 1);
-            }
-        }, lineNums.length);
     }
 
     private static IntLongMap linesOf(Class<?> clazz) {
@@ -205,14 +167,50 @@ public class SkybarClassVisitorTest {
         return snapshot.get(sourceName(clazz));
     }
 
-    private static IntLongMap nonZeroLinesOf(Class<?> clazz) {
-        IntLongMap map = linesOf(clazz);
-        map.removeIf((line, count) -> count == 0);
-        return map;
-    }
-
     private static String sourceName(Class<?> clazz) {
         return clazz.getPackage().getName().replace('.', '/') + "/" + clazz.getSimpleName() + ".java";
+    }
+
+    private void assertCorrectSourceCount(Class<?> clazz) {
+        IntLongMap expected = HashIntLongMaps.newMutableMap();
+        parseExpectedLines(clazz, expected);
+        assertThat(linesOf(clazz), equalTo(expected));
+    }
+
+    private void parseExpectedLines(Class<?> clazz, IntLongMap expected) {
+        File source = sourceOf(clazz);
+        try {
+            List<String> lines = Files.readAllLines(source.toPath(), Charset.defaultCharset());
+            for (int i = 1; i <= lines.size(); i++) {
+                String l = lines.get(i-1);
+                int commentStart = l.lastIndexOf("//");
+                if(commentStart != -1) {
+
+                    String comment = l.substring(commentStart+2).trim();
+                    try {
+                        expected.put(i, Long.parseLong(comment));
+                    } catch(NumberFormatException e) {
+                        System.err.print("Error parsing expected line number on line " + (i) + " of " + source.getAbsolutePath());
+                    }
+                }
+
+
+            }
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    private File sourceOf(Class<?> clazz) {
+        String path  = "src/test/java/" + clazz.getName().replace('.', '/') +".java";
+
+        File root = new File(URLDecoder.decode(clazz.getResource("/").getFile()));
+        File source = new File(root, path);
+        while(root.getParentFile() != null && !source.exists()) {
+            root = root.getParentFile();
+            source = new File(root, path);
+        }
+        return source;
     }
 
     private static Class<?> instrumentClass(Class<?> clazz) {
@@ -254,13 +252,4 @@ public class SkybarClassVisitorTest {
         }
     }
 
-    static class Pair {
-        final int line;
-        final long count;
-
-        public Pair(int line, long count) {
-            this.line = line;
-            this.count = count;
-        }
-    }
 }

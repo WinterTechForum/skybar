@@ -2,20 +2,20 @@ package org.wtf.skybar.transform.testcases;
 
 import java.io.IOException;
 
-public final class ForLoopWithException {
+public final class ForLoopWithException { // 0
     public static int foo() throws IOException {
-        int x = 0;
+        int x = 0; // 1
         try {
-            for (int i = 0; i < 3; i++) {
-                if (x == 2) {
-                    throw new ArithmeticException("foo");
+            for (int i = 0; i < 3; i++) { // 3
+                if (x == 2) { // 3
+                    throw new ArithmeticException("foo"); // 1
                 }
-                x++;
+                x++; // 2
             }
-        } catch (ArithmeticException e) {
-            return -1;
-        }
+        } catch (ArithmeticException e) { // 1
+            return -1; // 1
+        } // 0
 
-        return x;
+        return x; // 0
     }
 }
