@@ -89,7 +89,7 @@ public class SkybarClassVisitorTest {
         Class<?> clazz = instrumentClass(ConstructorOneLiner.class);
         clazz.getConstructor().newInstance();
 
-        assertCounts(clazz, linesWithSingleCounts(7));
+        assertCounts(clazz, linesWithSingleCounts(6, 7, 8));
     }
 
     @Test
