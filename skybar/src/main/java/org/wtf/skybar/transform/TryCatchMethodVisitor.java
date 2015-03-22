@@ -56,10 +56,12 @@ class TryCatchMethodVisitor extends WorkingLineNumberVisitor {
     protected void onMethodEnter() {
 
         getNodesOfType(LineNumberNode.class).forEach(node -> {
-            int lineNumberLocal = localVariablesSorter.newLocal(Type.INT_TYPE);
-            lineNumberLocals.put(node.line, lineNumberLocal);
-            superVisitInsn(Opcodes.ICONST_0);
-            mv.visitVarInsn(Opcodes.ISTORE, lineNumberLocal);
+            if(!lineNumberLocals.containsKey(node.line)) {
+                int lineNumberLocal = localVariablesSorter.newLocal(Type.INT_TYPE);
+                lineNumberLocals.put(node.line, lineNumberLocal);
+                superVisitInsn(Opcodes.ICONST_0);
+                mv.visitVarInsn(Opcodes.ISTORE, lineNumberLocal);
+            }
         });
         tryStart = new Label();
         tryEnd = new Label();
@@ -81,11 +83,13 @@ class TryCatchMethodVisitor extends WorkingLineNumberVisitor {
 
     @Override
     protected void onMethodExit(int opcode) {
-        reportLinesExecuted();
+        if(opcode != ATHROW) {
+            reportLinesExecuted("visitLine_methodExit");
+        }
     }
 
-    private void reportLinesExecuted() {
-        getNodesOfType(LineNumberNode.class).forEach(node -> {
+    private void reportLinesExecuted(String methodName) {
+        lineNumberLocals.forEach((int line, int local) -> {
             if (useInvokeDynamic()) {
 
                 // The invokedynamic byte code points to a bootstrap method used by the JVM to look up the call site method at the first executions.
@@ -100,11 +104,11 @@ class TryCatchMethodVisitor extends WorkingLineNumberVisitor {
                         descriptor);
 
                 // Load the local variable holding the execution count for the line
-                mv.visitVarInsn(ILOAD, lineNumberLocals.get(node.line));
+                mv.visitVarInsn(ILOAD, local);
                 // LongAdder expects a long
                 mv.visitInsn(I2L);
                 // Pass sourceFile and lineNumber as the "extra" arguments to the bootstrap method
-                mv.visitInvokeDynamicInsn("visitLine", "(J)V", bootstrap, sourceFile, node.line);
+                mv.visitInvokeDynamicInsn(methodName, "(J)V", bootstrap, sourceFile, line);
             } else {
                 // Slower, but compatible with Java <= 1.6
                 // We output the byte code equivalent to:
@@ -115,11 +119,11 @@ class TryCatchMethodVisitor extends WorkingLineNumberVisitor {
                 mv.visitFieldInsn(GETSTATIC, getInternalName(SkybarRegistry.class), "registry", getDescriptor(SkybarRegistry.class));
                 // Add source file and line number
                 mv.visitLdcInsn(sourceFile);
-                mv.visitLdcInsn(node.line);
+                mv.visitLdcInsn(line);
                 // Get the LongAdder
                 mv.visitMethodInsn(INVOKEVIRTUAL, getInternalName(SkybarRegistry.class), "getAdderForLine", getMethodDescriptor(getType(LongAdder.class), getType(String.class), Type.INT_TYPE), false);
                 // Load the execution count for the line
-                mv.visitVarInsn(ILOAD, lineNumberLocals.get(node.line));
+                mv.visitVarInsn(ILOAD, local);
                 // LongAdder expects a long
                 mv.visitInsn(I2L);
                 // Invoke the add method
@@ -136,7 +140,7 @@ class TryCatchMethodVisitor extends WorkingLineNumberVisitor {
     @Override
     public void visitMaxs(int maxStack, int maxLocals) {
         instrumentCatchHandler();
-        super.visitMaxs(maxStack + 3, maxLocals + getNodesOfType(LineNumberNode.class).size());
+        super.visitMaxs(maxStack + 3, maxLocals + lineNumberLocals.size());
     }
 
     private void instrumentCatchHandler() {
@@ -153,7 +157,7 @@ class TryCatchMethodVisitor extends WorkingLineNumberVisitor {
             locals.add(t);
         }
         super.visitFrame(Opcodes.F_NEW, locals.size(), locals.toArray(new Object[locals.size()]), 1, new Object[]{"java/lang/Throwable"});
-        reportLinesExecuted();
+        reportLinesExecuted("visitLine_catchHandler");
         mv.visitInsn(ATHROW);
     }
 

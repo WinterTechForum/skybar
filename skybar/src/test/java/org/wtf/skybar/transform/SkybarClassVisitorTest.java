@@ -71,7 +71,7 @@ public class SkybarClassVisitorTest {
     public void shouldCountStaticInitOneLiner() {
         Class<?> clazz = instrumentClass(StaticInitializerOneLiner.class);
 
-        assertCounts(clazz, map(p(7,1), p(8,1)));
+        assertCounts(clazz, map(p(7, 1), p(8, 1)));
     }
 
     @Test
@@ -159,7 +159,7 @@ public class SkybarClassVisitorTest {
 
         invokeStaticMethod(clazz, "foo");
 
-        assertCounts(clazz, map(p(7, 1), p(9, 4), p(10, 3), p(12, 2), p(15, 1), p(16, 1)));
+        assertCounts(clazz, map(p(7, 1), p(9, 3), p(10, 3), p(11, 1), p(13, 2), p(15, 1), p(16, 1)));
     }
 
     private void assertCounts(Class<?> clazz, IntLongMap counts) {
@@ -217,10 +217,6 @@ public class SkybarClassVisitorTest {
 
     private static Class<?> instrumentClass(Class<?> clazz) {
         try {
-            ClassReader reader = new ClassReader(clazz.getResourceAsStream(clazz.getSimpleName() + ".class"));
-            ClassWriter writer = new ClassWriter(reader, 0);
-            ClassVisitor visitor = new TraceClassVisitor(writer, new PrintWriter(System.out));
-            reader.accept(new SkybarClassVisitor(visitor), ClassReader.EXPAND_FRAMES);
 
             return Class.forName(clazz.getName(), true, new ClassLoader() {
 
@@ -236,14 +232,24 @@ public class SkybarClassVisitorTest {
                 @Override
                 protected Class<?> findClass(String name) throws ClassNotFoundException {
                     if (name.equals(clazz.getName())) {
-                        byte[] bytes = writer.toByteArray();
-                        Class<?> aClass = defineClass(name, bytes, 0, bytes.length);
-                        return aClass;
+                        try {
+                            ClassReader reader = new ClassReader(clazz.getResourceAsStream(clazz.getSimpleName() + ".class"));
+                            System.out.println("Unchanged bytecode: ");
+                            reader.accept(new TraceClassVisitor(new PrintWriter(System.out)), ClassReader.EXPAND_FRAMES);
+                            ClassWriter writer = new ClassWriter(reader, 0);
+                            ClassVisitor visitor = new TraceClassVisitor(writer, new PrintWriter(System.out));
+                            reader.accept(new SkybarClassVisitor(visitor), ClassReader.EXPAND_FRAMES);
+
+                            byte[] bytes = writer.toByteArray();
+                            return defineClass(name, bytes, 0, bytes.length);
+                        } catch (IOException e) {
+                            throw new RuntimeException(e);
+                        }
                     }
                     throw new ClassNotFoundException(name);
                 }
             });
-        } catch (IOException | ClassNotFoundException e) {
+        } catch (ClassNotFoundException e) {
             throw new RuntimeException(e);
         }
     }
