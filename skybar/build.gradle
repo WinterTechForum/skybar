@@ -21,6 +21,8 @@ dependencies {
   testCompile group: 'junit', name: 'junit', version: '4.12'
   testCompile "org.eclipse.jetty.websocket:websocket-client:${deps.jetty}"
   testRuntime 'org.slf4j:slf4j-simple:1.7.10'
+
+  testCompile 'com.palominolabs.http:url-builder:1.1.0'
 }
 
 shadowJar {
