@@ -1,5 +1,17 @@
 package org.wtf.skybar.transform;
 
+import java.io.File;
+import java.io.IOException;
+import java.io.PrintWriter;
+import java.io.UnsupportedEncodingException;
+import java.lang.reflect.InvocationTargetException;
+import java.net.URLDecoder;
+import java.nio.charset.Charset;
+import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 import net.openhft.koloboke.collect.map.IntLongMap;
 import net.openhft.koloboke.collect.map.hash.HashIntLongMaps;
 import org.junit.Test;
@@ -8,18 +20,18 @@ import org.objectweb.asm.ClassVisitor;
 import org.objectweb.asm.ClassWriter;
 import org.objectweb.asm.util.TraceClassVisitor;
 import org.wtf.skybar.registry.SkybarRegistry;
-import org.wtf.skybar.transform.testcases.*;
-
-import java.io.File;
-import java.io.IOException;
-import java.io.PrintWriter;
-import java.lang.reflect.InvocationTargetException;
-import java.net.URLDecoder;
-import java.nio.charset.Charset;
-import java.nio.file.Files;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import org.wtf.skybar.transform.testcases.Conditional;
+import org.wtf.skybar.transform.testcases.ConstructorOneLiner;
+import org.wtf.skybar.transform.testcases.ExceptionCatch;
+import org.wtf.skybar.transform.testcases.ForLoop;
+import org.wtf.skybar.transform.testcases.ForLoopWithException;
+import org.wtf.skybar.transform.testcases.InstanceInitializerOneLiner;
+import org.wtf.skybar.transform.testcases.MultStatementsOnSameLine;
+import org.wtf.skybar.transform.testcases.OneLiner;
+import org.wtf.skybar.transform.testcases.StaticInitializerOneLiner;
+import org.wtf.skybar.transform.testcases.StaticOneLiner;
+import org.wtf.skybar.transform.testcases.TryWithResources;
+import org.wtf.skybar.transform.testcases.WhileLoop;
 
 import static org.hamcrest.CoreMatchers.equalTo;
 import static org.junit.Assert.assertThat;
@@ -204,7 +216,12 @@ public class SkybarClassVisitorTest {
     private File sourceOf(Class<?> clazz) {
         String path  = "src/test/java/" + clazz.getName().replace('.', '/') +".java";
 
-        File root = new File(URLDecoder.decode(clazz.getResource("/").getFile()));
+        File root;
+        try {
+            root = new File(URLDecoder.decode(clazz.getResource("/").getFile(), StandardCharsets.UTF_8.name()));
+        } catch (UnsupportedEncodingException e) {
+            throw new RuntimeException("Impossible; UTF-8 always exists", e);
+        }
         File source = new File(root, path);
         while(root.getParentFile() != null && !source.exists()) {
             root = root.getParentFile();
@@ -231,9 +248,11 @@ public class SkybarClassVisitorTest {
                 protected Class<?> findClass(String name) throws ClassNotFoundException {
                     if (name.equals(clazz.getName())) {
                         try {
-                            ClassReader reader = new ClassReader(clazz.getResourceAsStream(clazz.getSimpleName() + ".class"));
+                            ClassReader reader =
+                                new ClassReader(clazz.getResourceAsStream(clazz.getSimpleName() + ".class"));
                             System.out.println("Unchanged bytecode: ");
-                            reader.accept(new TraceClassVisitor(new PrintWriter(System.out)), ClassReader.EXPAND_FRAMES);
+                            reader
+                                .accept(new TraceClassVisitor(new PrintWriter(System.out)), ClassReader.EXPAND_FRAMES);
                             ClassWriter writer = new ClassWriter(reader, 0);
                             ClassVisitor visitor = new TraceClassVisitor(writer, new PrintWriter(System.out));
                             reader.accept(new SkybarClassVisitor(visitor), ClassReader.EXPAND_FRAMES);
