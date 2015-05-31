@@ -64,6 +64,6 @@ public class SkybarTransformer implements ClassFileTransformer {
         }
         // Ok, do we match our pattern?
         // TODO figure out what to do with classes we can't find source for
-        return pattern.matcher(className).matches() && !className.contains("$$");
+        return pattern.matcher(className).matches();
     }
 }

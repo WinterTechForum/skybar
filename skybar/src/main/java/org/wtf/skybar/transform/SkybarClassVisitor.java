@@ -32,7 +32,9 @@ class SkybarClassVisitor extends ClassVisitor implements Opcodes {
     @Override
     public void visitSource(String source, String debug) {
         super.visitSource(source, debug);
-        this.sourceFile = className.substring(0, className.lastIndexOf("/") + 1) + source;
+        if (source.indexOf('$') == -1) {
+            this.sourceFile = className.substring(0, className.lastIndexOf("/") + 1) + source;
+        }
     }
 
     @Override
