@@ -50,12 +50,12 @@ public class SourceLister extends ResourceHandler {
         for (Resource base: this.searchPaths) {
             this.setBaseResource(base);
             result = super.getResource(path);
-            if (result != null) {
+            if (result != null && result.exists()) {
                 LOG.debug("Skybar source "+path+" found: "+result);
                 break;
             }
         }
-        if (result == null) {
+        if (result == null || !result.exists()) {
             LOG.warn("Skybar source NOT found: "+path);
         }
         return result;
