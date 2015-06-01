@@ -71,7 +71,7 @@ function openWebSocket($scope, $timeout) {
 
 };
 
-angular.module('skybar', [])
+angular.module('skybar', ['treeControl'])
     .controller('SkybarController', ['$scope', '$interval', '$http', '$timeout',
     function ($scope, $interval, $http, $timeout) {
 
@@ -84,6 +84,37 @@ angular.module('skybar', [])
         }
         return sourceFiles;
     };
+
+    $scope.sourceTreeOptions = {
+      "dirSelectable": false
+    }
+    var sourceTreeRoot = {"children": []};
+    $scope.sourceTree = function (coverage) {
+        function pushIfNewAndGet(name, isFile, packages) {
+            for (var i = 0; i < packages.length; i ++) {
+                if (packages[i].name === name) return packages[i];
+            }
+            var newPackage = {"name": name};
+            if (!isFile) {
+                newPackage.children = [];
+            }
+            packages.push(newPackage);
+            return newPackage;
+        }
+        for (var sourceFile in coverage) {
+            var currentTraversalNode = sourceTreeRoot;
+            var subPackages = sourceFile.substring(0, sourceFile.lastIndexOf("/")).split("/");
+            for (var i = 0; i < subPackages.length; i ++) {
+                currentTraversalNode = pushIfNewAndGet(subPackages[i], false, currentTraversalNode.children);
+            }
+
+            var sourceFileName = sourceFile.substring(sourceFile.lastIndexOf("/") + 1);
+            var fileNode = pushIfNewAndGet(sourceFileName, true, currentTraversalNode.children);
+            fileNode.sourceFile = sourceFile;
+        }
+
+        return sourceTreeRoot;
+    }
 
     $scope.loadSource = function (sourceFile) {
         console.log("sourceFile = " + sourceFile)
