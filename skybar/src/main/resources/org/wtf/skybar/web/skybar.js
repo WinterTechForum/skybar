@@ -1,12 +1,22 @@
-function onCoverageUpdate($scope) {
+function onCoverageUpdate($scope, $timeout) {
+  function resetJustUpdated(sourceLine) {
+    $timeout(function () {
+      sourceLine.justUpdated = false;
+    }, 50);
+  }
   if (typeof $scope.currentSourceFile === "string") {
     var currentSourceFileCoverage = $scope.coverage[$scope.currentSourceFile];
     for (var i = 0; i < $scope.currentSourceLines.length; i++) {
       var sourceLine = $scope.currentSourceLines[i];
       var execCount = currentSourceFileCoverage[sourceLine.number];
       if (typeof execCount === "number") {
+        console.log("updating coverage for line " + sourceLine.number);
         sourceLine.executable = true;
         sourceLine.covered = execCount > 0;
+        sourceLine.justUpdated = (sourceLine.execCount != execCount);
+        if (sourceLine.justUpdated) {
+          resetJustUpdated(sourceLine);
+        }
         sourceLine.execCount = execCount;
       } else {
         sourceLine.executable = false;
@@ -15,7 +25,7 @@ function onCoverageUpdate($scope) {
   }
 };
 
-function openWebSocket($scope) {
+function openWebSocket($scope, $timeout) {
   var host = location.host;
   var wsUri = "ws://" + host + "/livecoverage/";
   var websocket = new WebSocket(wsUri);
@@ -50,9 +60,9 @@ function openWebSocket($scope) {
          }
       }
     }
-      $scope.$apply(function() {
-          onCoverageUpdate($scope);
-      });
+    $scope.$apply(function() {
+        onCoverageUpdate($scope, $timeout);
+    });
 
   };
   websocket.onerror = function (evt) {
@@ -62,9 +72,10 @@ function openWebSocket($scope) {
 };
 
 angular.module('skybar', [])
-    .controller('SkybarController', ['$scope', '$interval', '$http', function ($scope, $interval, $http) {
+    .controller('SkybarController', ['$scope', '$interval', '$http', '$timeout',
+    function ($scope, $interval, $http, $timeout) {
 
-    openWebSocket($scope)
+    openWebSocket($scope, $timeout)
 
     $scope.sourceFiles = function () {
         var sourceFiles = [];
@@ -88,8 +99,8 @@ angular.module('skybar', [])
                     { "text": sourceLineTexts[i], "number": (i + 1).toString() }
                   )
               }
-                $scope.currentSourceFile = sourceFile;
-                onCoverageUpdate($scope);
+              $scope.currentSourceFile = sourceFile;
+              onCoverageUpdate($scope, $timeout);
 
               console.log($scope.currentSourceLines)
           }).error(function (data, status) {

@@ -3,18 +3,26 @@
     text-align: right;
     padding: 0.3em;
 }
+
 .linenum {
     color: gray;
 }
+
 .numVisits {
     min-width: 2em;
 }
+
 .covered {
-    background-color: #80ff80;
+    background-color: rgb(204, 255, 204);
+    -webkit-transition: all 360ms;
 }
 
 .uncovered {
-    background-color: pink;
+    background-color: rgb(255, 170, 170);
+}
+
+.justcovered {
+    background-color: rgb(153, 255, 153);
 }
 
 pre {
