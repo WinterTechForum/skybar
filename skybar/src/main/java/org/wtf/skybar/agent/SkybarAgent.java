@@ -48,6 +48,14 @@ public class SkybarAgent {
                      new InputStreamReader(new FileInputStream(new File(configFile)), StandardCharsets.UTF_8)) {
                 fileProps.load(reader);
             }
+        } else {
+            final File defaultConfigFile = new File("skybar.properties");
+            if (defaultConfigFile.exists()) {
+                try (InputStreamReader reader =
+                         new InputStreamReader(new FileInputStream(defaultConfigFile), StandardCharsets.UTF_8)) {
+                    fileProps.load(reader);
+                }
+            }
         }
 
         return new SkybarConfig(toMap(fileProps), toMap(System.getProperties()), System.getenv());
