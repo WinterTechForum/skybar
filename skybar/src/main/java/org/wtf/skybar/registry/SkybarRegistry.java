@@ -23,6 +23,23 @@ public class SkybarRegistry {
 
     public static final SkybarRegistry registry = new SkybarRegistry();
 
+    private static MethodHandle addMethodHandle;
+    private static MethodHandle incrementMethodHandle;
+
+    static {
+        try {
+            addMethodHandle = MethodHandles.lookup()
+                    .findVirtual(LongAdder.class,
+                            "add", MethodType.methodType(void.class, new Class[]{long.class}));
+
+            incrementMethodHandle = MethodHandles.lookup()
+                    .findVirtual(LongAdder.class,
+                            "increment", MethodType.methodType(void.class, new Class[]{}));
+        } catch (NoSuchMethodException | IllegalAccessException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
     private final ConcurrentMap<String, Map<Integer, LongAdder>> visits = new ConcurrentHashMap<>();
 
     private final List<DeltaListener> listeners = new CopyOnWriteArrayList<>();
@@ -133,20 +150,25 @@ public class SkybarRegistry {
     @SuppressWarnings("unused")
     public static CallSite bootstrap(MethodHandles.Lookup lookup, String name, MethodType type, String sourceName, int lineNumber) throws NoSuchMethodException, IllegalAccessException {
         LongAdder adder = registry.getAdderForLine(sourceName, lineNumber);
-        MethodHandle add = lookup
-                .findVirtual(LongAdder.class, "add", MethodType.methodType(void.class, new Class[]{long.class}))
+        MethodHandle increment = incrementMethodHandle
                 .bindTo(adder);
 
-        return new ConstantCallSite(MethodHandles.insertArguments(add, 0, 1l).asType(type));
+        return new ConstantCallSite(increment);
     }
 
-    public static CallSite bootstrapMulti(MethodHandles.Lookup lookup, String name, MethodType type, String sourceName, int lineNumber) throws NoSuchMethodException, IllegalAccessException {
+    @SuppressWarnings("unused")
+    public static CallSite bootstrapMulti(MethodHandles.Lookup lookup,
+                                          String name,
+                                          MethodType type,
+                                          String sourceName,
+                                          int lineNumber) throws NoSuchMethodException, IllegalAccessException {
+
         LongAdder adder = registry.getAdderForLine(sourceName, lineNumber);
-        MethodHandle add = lookup
-                .findVirtual(LongAdder.class, "add", MethodType.methodType(void.class, new Class[]{long.class}))
+
+        MethodHandle add = addMethodHandle
                 .bindTo(adder);
 
-        return new ConstantCallSite(add.asType(type));
+        return new ConstantCallSite(add);
     }
 
     /**
