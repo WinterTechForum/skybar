@@ -14,11 +14,18 @@ import org.objectweb.asm.util.TraceClassVisitor;
 
 public class SkybarTransformer implements ClassFileTransformer {
     private static final Logger logger = LoggerFactory.getLogger(SkybarTransformer.class);
+    private final String[] includes;
+    private final String[] excludes;
+    private final Pattern includeRegex;
+    private final Pattern excludeRegex;
 
-    private final Pattern pattern;
 
-    public SkybarTransformer(Pattern pattern) {
-        this.pattern = pattern;
+    public SkybarTransformer(String[] includes, String[] excludes, Pattern includeRegex, Pattern excludeRegex) {
+
+        this.includes = includes;
+        this.excludes = excludes;
+        this.includeRegex = includeRegex;
+        this.excludeRegex = excludeRegex;
     }
 
     @Override
@@ -62,8 +69,34 @@ public class SkybarTransformer implements ClassFileTransformer {
         if (bytes == null) {
             return false; // Can't instrument with no byte code
         }
+
+        if(className.contains("$$")) {
+            return false;
+        }
         // Ok, do we match our pattern?
         // TODO figure out what to do with classes we can't find source for
-        return pattern.matcher(className).matches() && !className.contains("$$");
+
+        if(matches(className, includes) && !matches(className, excludes)) {
+            return true;
+        }
+        if(matchesRegex(className, includeRegex) && ! matchesRegex(className, excludeRegex)) {
+            return true;
+        }
+        return false;
+    }
+
+    private boolean matchesRegex(String className, Pattern pattern) {
+        return pattern != null && pattern.matcher(className).matches();
+    }
+
+    private boolean matches(String className, String[] patterns) {
+        if(patterns != null) {
+            for (String pattern : patterns) {
+                if (className.startsWith(pattern)) {
+                    return true;
+                }
+            }
+        }
+        return false;
     }
 }

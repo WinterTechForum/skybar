@@ -15,7 +15,6 @@ import java.nio.charset.StandardCharsets;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Properties;
-import java.util.regex.Pattern;
 
 public class SkybarAgent {
 
@@ -25,16 +24,50 @@ public class SkybarAgent {
 
         SkybarConfig config = getSkybarConfig();
 
-        Pattern classNameRegex = config.getClassNameRegex();
-        if (classNameRegex == null) {
-            System.err.println("skybar.instrumentation.classRegex property not defined.");
+        if(! config.isIncludeConfigured()) {
+            System.err.println("Skybar needs at least one include pattern to be configured.");
+            System.err.println("Please define the skybar.include property");
             System.exit(-1);
         }
 
-        instrumentation.addTransformer(new SkybarTransformer(classNameRegex), false);
+        SkybarTransformer transformer = new SkybarTransformer(config.getIncludes(),
+                config.getExcludes(),
+                config.getIncludeRegex(),
+                config.getExcludeRegex());
+        instrumentation.addTransformer(transformer, false);
         int configuredPort = config.getWebUiPort();
         int actualPort = new WebServer(SkybarRegistry.registry, configuredPort, getSourcePathString(config)).start();
-        logger.info("Skybar started on port " + actualPort+ " against classes matching " + classNameRegex);
+        logger.info("Skybar started on port " + actualPort+ " against classes matching " + describeIncludes(config));
+    }
+
+    private static String describeIncludes(SkybarConfig config) {
+
+        StringBuilder sb = new StringBuilder();
+        sb.append("[");
+        sb.append(toString(config.getIncludes()));
+        sb.append("]");
+
+        if(config.getExcludes() != null) {
+            sb.append(" and not matching [");
+            sb.append(toString(config.getExcludes()));
+            sb.append("]");
+        }
+
+        return sb.toString();
+    }
+
+    private static String toString(String[] includes) {
+        StringBuilder sb = new StringBuilder();
+        if(includes != null) {
+            for (int i = 0; i < includes.length; i++) {
+                if(i > 0 ) {
+                    sb.append(", ");
+                }
+                String include = includes[i];
+                sb.append(include);
+            }
+        }
+        return sb.toString();
     }
 
     private static SkybarConfig getSkybarConfig() throws IOException {
