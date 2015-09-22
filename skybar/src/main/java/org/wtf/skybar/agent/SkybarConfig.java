@@ -24,7 +24,7 @@ class SkybarConfig {
      * @return port to listen on, or 0 to choose a random port
      */
     int getWebUiPort() {
-        return Integer.parseInt(getConfigValue("skybar.webUi.port", "7070"));
+        return Integer.parseInt(getConfigValue("skybar.port", "7070"));
     }
 
     /**
