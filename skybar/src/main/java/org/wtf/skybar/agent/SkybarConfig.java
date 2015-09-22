@@ -24,7 +24,7 @@ class SkybarConfig {
      * @return port to listen on, or 0 to choose a random port
      */
     int getWebUiPort() {
-        return Integer.parseInt(getConfigValue("skybar.port", "7070"));
+        return Integer.parseInt(getConfigValue("port", "7070"));
     }
 
     /**
@@ -35,7 +35,7 @@ class SkybarConfig {
      */
     @Nullable
     Pattern getIncludeRegex() {
-        return getRegexPattern("skybar.includeRegex");
+        return getRegexPattern("includeRegex");
     }
 
     /**
@@ -46,7 +46,7 @@ class SkybarConfig {
      */
     @Nullable
     Pattern getExcludeRegex() {
-        return getRegexPattern("skybar.excludeRegex");
+        return getRegexPattern("excludeRegex");
     }
 
     private Pattern getRegexPattern(String propName) {
@@ -63,7 +63,7 @@ class SkybarConfig {
      */
     @Nullable
     String[] getExcludes() {
-        String configValue = getConfigValue("skybar.exclude", null);
+        String configValue = getConfigValue("exclude", null);
 
         return configValue == null ? null : parseList(configValue);
     }
@@ -75,7 +75,7 @@ class SkybarConfig {
      */
     @Nullable
     String[] getIncludes() {
-        String configValue = getConfigValue("skybar.include", null);
+        String configValue = getConfigValue("include", null);
 
         return configValue == null ? null : parseList(configValue);
     }
@@ -99,17 +99,18 @@ class SkybarConfig {
      */
     @Nullable
     String getSourceLookupPath() {
-        return getConfigValue("skybar.source.fsPath", null);
+        return getConfigValue("source.fsPath", null);
     }
 
     @Nullable
     private String getConfigValue(String propName, @Nullable String defaultValue) {
-        if (systemProps.containsKey(propName)) {
+        String propNameInNameSpace = "skybar." + propName;
+        if (systemProps.containsKey(propNameInNameSpace)) {
             return systemProps.get(propName);
         }
 
-        if (env.containsKey(transformToEnvVar(propName))) {
-            return env.get(transformToEnvVar(propName));
+        if (env.containsKey(transformToEnvVar(propNameInNameSpace))) {
+            return env.get(transformToEnvVar(propNameInNameSpace));
         }
 
         if (fileProps.containsKey(propName)) {

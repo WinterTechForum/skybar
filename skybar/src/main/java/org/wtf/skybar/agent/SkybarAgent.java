@@ -75,6 +75,12 @@ public class SkybarAgent {
         if (configFile == null) {
             configFile = System.getenv("SKYBAR_CONFIG");
         }
+        if(configFile == null) {
+            File defaultFile = new File("skybar.config");
+            if(defaultFile.exists()) {
+                configFile = defaultFile.getAbsolutePath() ;
+            }
+        }
         Properties fileProps = new Properties();
         if (configFile != null) {
             try (InputStreamReader reader =
