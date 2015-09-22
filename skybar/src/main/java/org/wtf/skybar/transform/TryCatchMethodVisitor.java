@@ -103,12 +103,13 @@ class TryCatchMethodVisitor extends WorkingLineNumberVisitor {
                 Handle bootstrap = new Handle(Opcodes.H_INVOKESTATIC, getInternalName(SkybarRegistry.class), "bootstrapMulti",
                         descriptor);
 
-                // Load the local variable holding the execution count for the line
+
                 mv.visitVarInsn(ILOAD, local);
-                // LongAdder expects a long
+
                 mv.visitInsn(I2L);
-                // Pass sourceFile and lineNumber as the "extra" arguments to the bootstrap method
+
                 mv.visitInvokeDynamicInsn(methodName, "(J)V", bootstrap, sourceFile, line);
+
             } else {
                 // Slower, but compatible with Java <= 1.6
                 // We output the byte code equivalent to:
