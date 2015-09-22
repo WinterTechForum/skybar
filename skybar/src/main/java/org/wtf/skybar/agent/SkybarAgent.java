@@ -32,9 +32,9 @@ public class SkybarAgent {
         }
 
         instrumentation.addTransformer(new SkybarTransformer(classNameRegex), false);
-        int port = config.getWebUiPort();
-        new WebServer(SkybarRegistry.registry, port, getSourcePathString(config)).start();
-        logger.info("Skybar started on port " + port + " against classes matching " + classNameRegex);
+        int configuredPort = config.getWebUiPort();
+        int actualPort = new WebServer(SkybarRegistry.registry, configuredPort, getSourcePathString(config)).start();
+        logger.info("Skybar started on port " + actualPort+ " against classes matching " + classNameRegex);
     }
 
     private static SkybarConfig getSkybarConfig() throws IOException {
