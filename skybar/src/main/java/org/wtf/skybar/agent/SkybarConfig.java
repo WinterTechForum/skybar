@@ -22,12 +22,12 @@ class SkybarConfig {
      * @return port to listen on, or 0 to choose a random port
      */
     int getWebUiPort() {
-        return Integer.parseInt(getConfigValue("skybar.webUi.port", "0"));
+        return Integer.parseInt(getConfigValue("skybar.webUi.port", "7070"));
     }
 
     /**
      * This regex will be used with {@link Matcher#matches()} to determine if a class should be instrumented. This will
-     * be used to match against the "binary name" of the string, e.g. "com/foo/bar/SomeClass".
+     * be used to match against the "binary name" of the class, e.g. "com/foo/bar/SomeClass".
      *
      * @return regex to use against class names
      */
