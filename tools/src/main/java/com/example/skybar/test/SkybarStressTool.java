@@ -1,5 +1,6 @@
 package com.example.skybar.test;
 
+import java.io.File;
 import java.net.URI;
 import java.util.ArrayList;
 import java.util.List;
@@ -19,6 +20,7 @@ import org.eclipse.jetty.websocket.api.annotations.WebSocket;
 import org.eclipse.jetty.websocket.client.ClientUpgradeRequest;
 import org.eclipse.jetty.websocket.client.WebSocketClient;
 import org.wtf.skybar.registry.SkybarRegistry;
+import org.wtf.skybar.source.FileSystemSourceProvider;
 import org.wtf.skybar.web.WebServer;
 
 /**
@@ -41,7 +43,7 @@ public final class SkybarStressTool {
 
     public void go(int durationSecs) throws Exception {
 
-        WebServer webServer = new WebServer(r, 0, Resource.newResource("."));
+        WebServer webServer = new WebServer(r, 0, new FileSystemSourceProvider(new File(".")));
         int port = webServer.start();
 
         long seed = new Random().nextLong();

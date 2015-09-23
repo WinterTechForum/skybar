@@ -1,30 +1,37 @@
 package org.wtf.skybar.web;
 
-import java.io.File;
 import java.io.IOException;
 import java.net.MalformedURLException;
-import java.util.ArrayList;
-import java.util.List;
-import org.eclipse.jetty.server.handler.ResourceHandler;
+
+import org.eclipse.jetty.server.Request;
+import org.eclipse.jetty.server.handler.AbstractHandler;
 import org.eclipse.jetty.util.log.Log;
 import org.eclipse.jetty.util.log.Logger;
-import org.eclipse.jetty.util.resource.Resource;
+import org.wtf.skybar.registry.SkybarRegistry;
+import org.wtf.skybar.source.Source;
+import org.wtf.skybar.source.SourceProvider;
+
+import javax.servlet.ServletException;
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
 
 /**
  * Use Jetty ResourceHandler to search a path-style set of directories for a resource.
  */
-public class SourceLister extends ResourceHandler {
+public class SourceLister extends AbstractHandler {
     private static final Logger LOG = Log.getLogger(SourceLister.class);
-    private final Resource[] searchPaths;
+    private final SourceProvider[] sourceProviders;
+    private final SkybarRegistry registry;
 
     /**
      * String with "path.separator" delimiters to search for source files.
      *
-     * @param searchPaths delimited string.
+     * @param sourceProviders delimited string.
      * @throws java.io.IOException if given an invalid path/directory.
      */
-    public SourceLister(Resource... resources) throws IOException {
-        this.searchPaths = resources;
+    public SourceLister(SkybarRegistry registry, SourceProvider... sourceProviders) throws IOException {
+        this.registry = registry;
+        this.sourceProviders = sourceProviders;
     }
 
     /**
@@ -33,20 +40,27 @@ public class SourceLister extends ResourceHandler {
      * @return found Resource or null if not found.
      * @throws MalformedURLException if invalid URL passed in.
      */
-    @Override
-    public Resource getResource(String path) throws MalformedURLException {
-        Resource result = null;
-        for (Resource base: this.searchPaths) {
-            this.setBaseResource(base);
-            result = super.getResource(path);
-            if (result != null && result.exists()) {
-                LOG.debug("Skybar source "+path+" found: "+result);
-                break;
+    public void handle(String target, Request baseRequest, HttpServletRequest request, HttpServletResponse response) throws IOException, ServletException {
+        String path = target.substring(1);
+        ClassLoader loader = registry.getClassLoader(path);
+        if(loader != null) {
+            Source source = getSource(path, loader);
+            if(source != null) {
+                response.setContentType("text/plain");
+                source.write(response.getOutputStream());
+                baseRequest.setHandled(true);
             }
         }
-        if (result == null || !result.exists()) {
-            LOG.warn("Skybar source NOT found: "+path);
+
+    }
+
+    Source getSource(String path, ClassLoader classLoader) {
+        for (SourceProvider sourceProvider : sourceProviders) {
+            Source source = sourceProvider.lookup(path, classLoader);
+            if(source != null) {
+                return  source;
+            }
         }
-        return result;
+        return null;
     }
 }

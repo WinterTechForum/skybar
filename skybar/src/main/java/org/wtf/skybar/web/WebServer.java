@@ -7,7 +7,6 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
 
-import org.eclipse.jetty.server.AbstractConnectionFactory;
 import org.eclipse.jetty.server.HttpConnectionFactory;
 import org.eclipse.jetty.server.Server;
 import org.eclipse.jetty.server.ServerConnector;
@@ -23,23 +22,24 @@ import org.eclipse.jetty.util.thread.Scheduler;
 import org.eclipse.jetty.websocket.server.WebSocketHandler;
 import org.eclipse.jetty.websocket.servlet.WebSocketServletFactory;
 import org.wtf.skybar.registry.SkybarRegistry;
+import org.wtf.skybar.source.SourceProvider;
 import org.wtf.skybar.time.RegistryUpdateListeners;
 
 public class WebServer {
     private Server server;
     private final SkybarRegistry registry;
     private final int port;
-    private final Resource[] sourcePaths;
+    private final SourceProvider[] sourceProviders;
 
     /**
      * @param registry   registry to use for listeners
      * @param port       port to listen on, or 0 to use an available port
-     * @param sourcePaths where to load source from
+     * @param sourceProviders where to load source from
      */
-    public WebServer(SkybarRegistry registry, int port, Resource... sourcePaths) {
+    public WebServer(SkybarRegistry registry, int port, SourceProvider... sourceProviders) {
         this.registry = registry;
         this.port = port;
-        this.sourcePaths = sourcePaths;
+        this.sourceProviders = sourceProviders;
     }
 
     /**
@@ -72,8 +72,7 @@ public class WebServer {
             // Add servlet to deliver Java source files
             ContextHandler sourceContext = new ContextHandler();
             sourceContext.setContextPath("/source");
-            SourceLister sourceLister = new SourceLister(sourcePaths);
-            sourceLister.setDirectoriesListed(true);
+            SourceLister sourceLister = new SourceLister(registry, sourceProviders);
             sourceContext.setHandler(sourceLister);
             handlers.addHandler(sourceContext);
 

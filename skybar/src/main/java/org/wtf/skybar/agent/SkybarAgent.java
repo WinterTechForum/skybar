@@ -5,6 +5,8 @@ import org.eclipse.jetty.util.resource.Resource;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.wtf.skybar.registry.SkybarRegistry;
+import org.wtf.skybar.source.FileSystemSourceProvider;
+import org.wtf.skybar.source.SourceProvider;
 import org.wtf.skybar.transform.SkybarTransformer;
 import org.wtf.skybar.web.WebServer;
 
@@ -39,7 +41,7 @@ public class SkybarAgent {
                 config.getExcludeRegex());
         instrumentation.addTransformer(transformer, false);
         int configuredPort = config.getWebUiPort();
-        int actualPort = new WebServer(SkybarRegistry.registry, configuredPort, getSourceResources(config)).start();
+        int actualPort = new WebServer(SkybarRegistry.registry, configuredPort, getSourceProviders(config)).start();
         logger.info("Skybar started on port " + actualPort+ " against classes matching " + describeIncludes(config));
     }
 
@@ -110,8 +112,8 @@ public class SkybarAgent {
         return new SkybarConfig(toMap(fileProps), toMap(System.getProperties()), System.getenv());
     }
 
-    private static Resource[] getSourceResources(SkybarConfig config) throws IOException {
-        List<Resource> resources = new ArrayList<>();
+    private static SourceProvider[] getSourceProviders(SkybarConfig config) throws IOException {
+        List<SourceProvider> providers = new ArrayList<>();
 
         String sourceLookupPath = config.getSourceLookupPath();
         if (sourceLookupPath != null) {
@@ -122,15 +124,15 @@ public class SkybarAgent {
                     throw new IOException("Invalid search path, not a directory: "+
                             dir.getAbsolutePath());
                 }
-                resources.add(Resource.newResource(dir));
+                providers.add(new FileSystemSourceProvider(dir));
                 LOG.info("Skybar source path added: "+dir.getAbsolutePath());
             }
         }
         File projectSource = new File("src/main/java");
         if(projectSource.exists()) {
-            resources.add(Resource.newResource(projectSource));
+            providers.add(new FileSystemSourceProvider(projectSource));
         }
-        return resources.toArray(new Resource[resources.size()]);
+        return providers.toArray(new SourceProvider[providers.size()]);
     }
 
     private static Map<String, String> toMap(Properties props) {

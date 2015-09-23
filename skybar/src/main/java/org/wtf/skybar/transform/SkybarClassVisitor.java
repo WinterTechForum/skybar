@@ -45,6 +45,10 @@ class SkybarClassVisitor extends ClassVisitor implements Opcodes {
         }
     }
 
+    public String getSourceFile() {
+        return sourceFile;
+    }
+
     class FirstPass extends MethodNode {
         private final MethodVisitor mv;
 

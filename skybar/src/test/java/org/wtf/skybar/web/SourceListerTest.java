@@ -1,59 +1,60 @@
 package org.wtf.skybar.web;
 
-import org.eclipse.jetty.util.resource.Resource;
 import org.junit.Test;
+import org.wtf.skybar.source.FileSystemSourceProvider;
+import org.wtf.skybar.source.Source;
 
+import java.io.File;
 import java.io.IOException;
 
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertNull;
 
 public class SourceListerTest {
     @Test
     public void testGetExistingResourceSinglePath() throws IOException {
         // Set up
-        final SourceLister instance = new SourceLister(
-            Resource.newResource("src/test/resources/source_dir")
+        final SourceLister instance = new SourceLister( null,
+                new FileSystemSourceProvider(new File("src/test/resources/source_dir"))
         );
 
         // Test
-        final Resource actualResource = instance.getResource("/file");
+        final Source actualResource = instance.getSource("/file", null);
 
         // Verify
         assertNotNull(actualResource);
-        assertTrue(actualResource.exists());
     }
 
     @Test
     public void testGetExistingResourceMultiplePaths() throws IOException {
         // Set up
-        final SourceLister instance = new SourceLister(
-                Resource.newResource("src/test/resources/empty"),
-                Resource.newResource(System.getProperty("path.separator")),
-                Resource.newResource("src/test/resources/source_dir")
-        );
+        final SourceLister instance = new SourceLister(null,
+                new FileSystemSourceProvider(new File("src/test/resources/empty")),
+                        new FileSystemSourceProvider(new File("path.separator")),
+                        new FileSystemSourceProvider(new File("src/test/resources/source_dir"))
+                        );
 
         // Test
-        final Resource actualResource = instance.getResource("/file");
+        final Source actualResource = instance.getSource("/file", null);
 
         // Verify
         assertNotNull(actualResource);
-        assertTrue(actualResource.exists());
     }
 
     @Test
     public void testGetMissingResource() throws IOException {
         // Set up
-        final SourceLister instance = new SourceLister(
-                Resource.newResource("src/test/resources/empty"),
-                        Resource.newResource(System.getProperty("path.separator")),
-                                Resource.newResource("src/test/resources/source_dir")
+        final SourceLister instance = new SourceLister(  null,
+                new FileSystemSourceProvider(new File("src/test/resources/empty")),
+                new FileSystemSourceProvider(new File("path.separator")),
+                new FileSystemSourceProvider(new File("src/test/resources/source_dir"))
         );
 
+
         // Test
-        final Resource actualResource = instance.getResource("/non-existent");
+        final Source actualResource = instance.getSource("/non-existent", null);
 
         // Verify
-        assertNotNull(actualResource);
-        assertFalse(actualResource.exists());
+        assertNull(actualResource);
     }
 }

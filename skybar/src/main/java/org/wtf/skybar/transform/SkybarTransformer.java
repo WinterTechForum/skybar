@@ -11,6 +11,7 @@ import org.objectweb.asm.ClassWriter;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.objectweb.asm.util.TraceClassVisitor;
+import org.wtf.skybar.registry.SkybarRegistry;
 
 public class SkybarTransformer implements ClassFileTransformer {
     private static final Logger logger = LoggerFactory.getLogger(SkybarTransformer.class);
@@ -43,7 +44,11 @@ public class SkybarTransformer implements ClassFileTransformer {
                 reader.accept(new TraceClassVisitor(new PrintWriter(System.out)), ClassReader.EXPAND_FRAMES);
             }
             try {
-                reader.accept(new SkybarClassVisitor(visitor), ClassReader.EXPAND_FRAMES);
+                SkybarClassVisitor skybarVisitor = new SkybarClassVisitor(visitor);
+                reader.accept(skybarVisitor, ClassReader.EXPAND_FRAMES);
+                if(skybarVisitor.getSourceFile() != null) {
+                    SkybarRegistry.registry.registerClassLoader(skybarVisitor.getSourceFile(), loader);
+                }
             } catch (Exception e) {
                 e.printStackTrace();
             }

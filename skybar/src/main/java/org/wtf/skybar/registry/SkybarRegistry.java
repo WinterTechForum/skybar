@@ -41,6 +41,7 @@ public class SkybarRegistry {
     }
 
     private final ConcurrentMap<String, Map<Integer, LongAdder>> visits = new ConcurrentHashMap<>();
+    private final ConcurrentMap<String, ClassLoader> classLoaderBySourceFile = new ConcurrentHashMap<>();
 
     private final List<DeltaListener> listeners = new CopyOnWriteArrayList<>();
 
@@ -169,6 +170,14 @@ public class SkybarRegistry {
                 .bindTo(adder);
 
         return new ConstantCallSite(add);
+    }
+
+    public void registerClassLoader(String sourceFile, ClassLoader loader) {
+        classLoaderBySourceFile.putIfAbsent(sourceFile, loader);
+    }
+
+    public ClassLoader getClassLoader(String sourceFile) {
+        return classLoaderBySourceFile.get(sourceFile);
     }
 
     /**
