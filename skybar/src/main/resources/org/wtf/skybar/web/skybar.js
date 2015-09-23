@@ -78,6 +78,9 @@ angular.module('skybar', [])
 
                 websocket.onopen = function (evt) {
                     console.log("onOpen Event")
+                    $interval(function() {
+                        websocket.send("ping")
+                    }, 30000)
                 };
                 websocket.onclose = function (evt) {
                     console.log("onClose Event")
