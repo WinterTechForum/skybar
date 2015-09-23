@@ -22,6 +22,8 @@ public class SkybarAgent {
 
     public static void premain(String options, Instrumentation instrumentation) throws Exception {
 
+        perhapsWait();
+
         SkybarConfig config = getSkybarConfig();
 
         if(! config.isIncludeConfigured()) {
@@ -38,6 +40,21 @@ public class SkybarAgent {
         int configuredPort = config.getWebUiPort();
         int actualPort = new WebServer(SkybarRegistry.registry, configuredPort, getSourcePathString(config)).start();
         logger.info("Skybar started on port " + actualPort+ " against classes matching " + describeIncludes(config));
+    }
+
+    /**
+     * Conditionally wait a few secs at startup to allow a debugger to connect. Useful for development of Skybar itself.
+     */
+    private static void perhapsWait() {
+
+        String waitTime = System.getProperty("skybar.waitsecs");
+        if(waitTime != null) {
+            try {
+                Thread.sleep(Long.parseLong(waitTime)*1000);
+            } catch (InterruptedException e) {
+                throw new RuntimeException(e);
+            }
+        }
     }
 
     private static String describeIncludes(SkybarConfig config) {
