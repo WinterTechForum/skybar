@@ -1,5 +1,7 @@
 package org.wtf.skybar.agent;
 
+import org.eclipse.jetty.util.log.Log;
+import org.eclipse.jetty.util.resource.Resource;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.wtf.skybar.registry.SkybarRegistry;
@@ -12,12 +14,11 @@ import java.io.IOException;
 import java.io.InputStreamReader;
 import java.lang.instrument.Instrumentation;
 import java.nio.charset.StandardCharsets;
-import java.util.HashMap;
-import java.util.Map;
-import java.util.Properties;
+import java.util.*;
 
 public class SkybarAgent {
 
+    private static final org.eclipse.jetty.util.log.Logger LOG = Log.getLogger(SkybarAgent.class);
     private static final Logger logger = LoggerFactory.getLogger(SkybarAgent.class);
 
     public static void premain(String options, Instrumentation instrumentation) throws Exception {
@@ -38,7 +39,7 @@ public class SkybarAgent {
                 config.getExcludeRegex());
         instrumentation.addTransformer(transformer, false);
         int configuredPort = config.getWebUiPort();
-        int actualPort = new WebServer(SkybarRegistry.registry, configuredPort, getSourcePathString(config)).start();
+        int actualPort = new WebServer(SkybarRegistry.registry, configuredPort, getSourceResources(config)).start();
         logger.info("Skybar started on port " + actualPort+ " against classes matching " + describeIncludes(config));
     }
 
@@ -109,12 +110,27 @@ public class SkybarAgent {
         return new SkybarConfig(toMap(fileProps), toMap(System.getProperties()), System.getenv());
     }
 
-    private static String getSourcePathString(SkybarConfig config) throws IOException {
+    private static Resource[] getSourceResources(SkybarConfig config) throws IOException {
+        List<Resource> resources = new ArrayList<>();
+
         String sourceLookupPath = config.getSourceLookupPath();
-        if (sourceLookupPath == null) {
-            return new File("src/main/java").getCanonicalPath();
+        if (sourceLookupPath != null) {
+            String[] split = sourceLookupPath.split(System.getProperty("path.separator"));
+            for (String str: split) {
+                File dir = new File(str).getCanonicalFile();
+                if (!dir.isDirectory()) {
+                    throw new IOException("Invalid search path, not a directory: "+
+                            dir.getAbsolutePath());
+                }
+                resources.add(Resource.newResource(dir));
+                LOG.info("Skybar source path added: "+dir.getAbsolutePath());
+            }
         }
-        return sourceLookupPath;
+        File projectSource = new File("src/main/java");
+        if(projectSource.exists()) {
+            resources.add(Resource.newResource(projectSource));
+        }
+        return resources.toArray(new Resource[resources.size()]);
     }
 
     private static Map<String, String> toMap(Properties props) {

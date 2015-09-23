@@ -29,17 +29,17 @@ public class WebServer {
     private Server server;
     private final SkybarRegistry registry;
     private final int port;
-    private final String sourcePath;
+    private final Resource[] sourcePaths;
 
     /**
      * @param registry   registry to use for listeners
      * @param port       port to listen on, or 0 to use an available port
-     * @param sourcePath where to load source from
+     * @param sourcePaths where to load source from
      */
-    public WebServer(SkybarRegistry registry, int port, String sourcePath) {
+    public WebServer(SkybarRegistry registry, int port, Resource... sourcePaths) {
         this.registry = registry;
         this.port = port;
-        this.sourcePath = sourcePath;
+        this.sourcePaths = sourcePaths;
     }
 
     /**
@@ -72,7 +72,7 @@ public class WebServer {
             // Add servlet to deliver Java source files
             ContextHandler sourceContext = new ContextHandler();
             sourceContext.setContextPath("/source");
-            SourceLister sourceLister = new SourceLister(sourcePath);
+            SourceLister sourceLister = new SourceLister(sourcePaths);
             sourceLister.setDirectoriesListed(true);
             sourceContext.setHandler(sourceLister);
             handlers.addHandler(sourceContext);

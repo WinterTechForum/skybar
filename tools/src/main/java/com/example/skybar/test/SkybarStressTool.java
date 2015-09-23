@@ -9,6 +9,8 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 import java.util.concurrent.atomic.AtomicInteger;
+
+import org.eclipse.jetty.util.resource.Resource;
 import org.eclipse.jetty.websocket.api.Session;
 import org.eclipse.jetty.websocket.api.annotations.OnWebSocketClose;
 import org.eclipse.jetty.websocket.api.annotations.OnWebSocketConnect;
@@ -39,7 +41,7 @@ public final class SkybarStressTool {
 
     public void go(int durationSecs) throws Exception {
 
-        WebServer webServer = new WebServer(r, 0, ".");
+        WebServer webServer = new WebServer(r, 0, Resource.newResource("."));
         int port = webServer.start();
 
         long seed = new Random().nextLong();

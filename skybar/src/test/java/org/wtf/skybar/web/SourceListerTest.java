@@ -12,7 +12,7 @@ public class SourceListerTest {
     public void testGetExistingResourceSinglePath() throws IOException {
         // Set up
         final SourceLister instance = new SourceLister(
-            "src/test/resources/source_dir"
+            Resource.newResource("src/test/resources/source_dir")
         );
 
         // Test
@@ -27,9 +27,9 @@ public class SourceListerTest {
     public void testGetExistingResourceMultiplePaths() throws IOException {
         // Set up
         final SourceLister instance = new SourceLister(
-            "src/test/resources/empty" +
-            System.getProperty("path.separator") +
-            "src/test/resources/source_dir"
+                Resource.newResource("src/test/resources/empty"),
+                Resource.newResource(System.getProperty("path.separator")),
+                Resource.newResource("src/test/resources/source_dir")
         );
 
         // Test
@@ -44,9 +44,9 @@ public class SourceListerTest {
     public void testGetMissingResource() throws IOException {
         // Set up
         final SourceLister instance = new SourceLister(
-            "src/test/resources/empty" +
-            System.getProperty("path.separator") +
-            "src/test/resources/source_dir"
+                Resource.newResource("src/test/resources/empty"),
+                        Resource.newResource(System.getProperty("path.separator")),
+                                Resource.newResource("src/test/resources/source_dir")
         );
 
         // Test

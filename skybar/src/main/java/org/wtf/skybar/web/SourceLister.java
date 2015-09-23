@@ -15,7 +15,7 @@ import org.eclipse.jetty.util.resource.Resource;
  */
 public class SourceLister extends ResourceHandler {
     private static final Logger LOG = Log.getLogger(SourceLister.class);
-    private final List<Resource> searchPaths;
+    private final Resource[] searchPaths;
 
     /**
      * String with "path.separator" delimiters to search for source files.
@@ -23,19 +23,8 @@ public class SourceLister extends ResourceHandler {
      * @param searchPaths delimited string.
      * @throws java.io.IOException if given an invalid path/directory.
      */
-    public SourceLister(String searchPaths) throws IOException {
-        String[] split = searchPaths.split(System.getProperty("path.separator"));
-        this.searchPaths = new ArrayList<>(split.length);
-        for (String str: split) {
-            File dir = new File(str).getCanonicalFile();
-            if (!dir.isDirectory()) {
-                throw new IOException("Invalid search path, not a directory: "+
-                        dir.getAbsolutePath());
-            }
-            this.searchPaths.add(Resource.newResource(dir));
-            LOG.info("Skybar source path added: "+dir.getAbsolutePath());
-        }
-        assert(this.searchPaths.size() > 0);
+    public SourceLister(Resource... resources) throws IOException {
+        this.searchPaths = resources;
     }
 
     /**
