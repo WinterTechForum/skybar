@@ -106,7 +106,7 @@ class SkybarConfig {
     private String getConfigValue(String propName, @Nullable String defaultValue) {
         String propNameInNameSpace = "skybar." + propName;
         if (systemProps.containsKey(propNameInNameSpace)) {
-            return systemProps.get(propName);
+            return systemProps.get(propNameInNameSpace);
         }
 
         if (env.containsKey(transformToEnvVar(propNameInNameSpace))) {
