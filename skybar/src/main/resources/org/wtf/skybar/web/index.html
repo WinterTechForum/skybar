@@ -22,7 +22,7 @@
     <td valign="top">
     <ul>
         <li ng-repeat="sourceFile in sourceFiles() | orderBy:'toString()' as sf ">
-            <a href="#" ng-click="loadSource(sourceFile)">...{{sourceFile.substring(sourceFile.indexOf('/', 32))}}</a>
+            <a href="#" ng-click="loadSource(sourceFile)">{{sourceFile.substring(sourceFile.lastIndexOf('/')+1)}}</a>
         </li>
     </ul>
     </td>
