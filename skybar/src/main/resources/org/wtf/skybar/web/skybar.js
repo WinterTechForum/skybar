@@ -4,13 +4,7 @@ angular.module('skybar', [])
 
             openWebSocket()
 
-            $scope.sourceFiles = function () {
-                var sourceFiles = [];
-                for (var sourceFile in $scope.coverage) {
-                    sourceFiles.push(sourceFile);
-                }
-                return sourceFiles;
-            };
+            $scope.sourceFiles = [];
 
             $scope.loadSource = function (sourceFile) {
                 console.log("sourceFile = " + sourceFile)
@@ -69,6 +63,11 @@ angular.module('skybar', [])
                         }
                     }
                 }
+                var sourceFiles = [];
+                for (var sourceFile in $scope.coverage) {
+                    sourceFiles.push({name: sourceFile, simpleName: sourceFile.substring(sourceFile.lastIndexOf('/')+1)});
+                }
+                $scope.sourceFiles = sourceFiles;
             }
 
             function openWebSocket() {

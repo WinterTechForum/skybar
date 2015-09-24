@@ -9,20 +9,18 @@
 <tr>
     <tr>
       <th>
-          <span ng-show="sf.length == 0">
-          No source files have been run so far
-          </span>
-          <span ng-show="sf.length > 0">
-          Source files that have run {{}}
-          </span>
       </th>
       <th>&nbsp;</th>
       <th>{{currentSourceFile}}</th>
     </tr>
     <td valign="top">
+        <input ng-model="query.simpleName" size="30" placeholder="AbstractSingletonProxyFactoryBean">
+        <p ng-show="sourceFiles.length == 0">
+          No source files have been run so far
+        </p>
     <ul>
-        <li ng-repeat="sourceFile in sourceFiles() | orderBy:'toString()' as sf ">
-            <a href="#" ng-click="loadSource(sourceFile)">{{sourceFile.substring(sourceFile.lastIndexOf('/')+1)}}</a>
+        <li ng-repeat="sourceFile in sourceFiles | filter:query| orderBy:'simpleName' as sf ">
+            <a href="#" ng-click="loadSource(sourceFile.name)">{{sourceFile.simpleName}}</a>
         </li>
     </ul>
     </td>
