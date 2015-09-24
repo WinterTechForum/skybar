@@ -1,11 +1,11 @@
 package org.wtf.skybar.agent;
 
 import org.eclipse.jetty.util.log.Log;
-import org.eclipse.jetty.util.resource.Resource;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.wtf.skybar.registry.SkybarRegistry;
 import org.wtf.skybar.source.FileSystemSourceProvider;
+import org.wtf.skybar.source.MavenSourceArtifactSourceProvider;
 import org.wtf.skybar.source.SourceProvider;
 import org.wtf.skybar.transform.SkybarTransformer;
 import org.wtf.skybar.web.WebServer;
@@ -132,6 +132,7 @@ public class SkybarAgent {
         if(projectSource.exists()) {
             providers.add(new FileSystemSourceProvider(projectSource));
         }
+        providers.add(new MavenSourceArtifactSourceProvider());
         return providers.toArray(new SourceProvider[providers.size()]);
     }
 
